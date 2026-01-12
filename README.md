@@ -120,6 +120,4 @@ See the [docs](./docs/) folder for additional documentation.
 
 MIT License - See LICENSE file for details.
 
-## Contributing
 
-Contributions are welcome! Please feel free to submit issues and pull requests.
