@@ -34,11 +34,11 @@
         <div class="nav-section">
           <h2 class="nav-section-title">Features</h2>
           <ul class="nav-links">
-            <li><a href="#tasks" class="nav-link">Task Management</a></li>
+            <li><a href="#templates" class="nav-link">Templates</a></li>
             <li><a href="#terminals" class="nav-link">Terminals</a></li>
             <li><a href="#layouts" class="nav-link">Layouts</a></li>
-            <li><a href="#scripts" class="nav-link">Script Configuration</a></li>
             <li><a href="#history" class="nav-link">Execution History</a></li>
+            <li><a href="#automation" class="nav-link">Automation Steps</a></li>
           </ul>
         </div>
 
@@ -46,7 +46,6 @@
           <h2 class="nav-section-title">Configuration</h2>
           <ul class="nav-links">
             <li><a href="#settings" class="nav-link">Settings</a></li>
-            <li><a href="#config-file" class="nav-link">marcha.config.json</a></li>
             <li><a href="#data-storage" class="nav-link">Data Storage</a></li>
           </ul>
         </div>
@@ -54,7 +53,6 @@
         <div class="nav-section">
           <h2 class="nav-section-title">Reference</h2>
           <ul class="nav-links">
-            <li><a href="#keyboard-shortcuts" class="nav-link">Keyboard Shortcuts</a></li>
             <li><a href="#troubleshooting" class="nav-link">Troubleshooting</a></li>
           </ul>
         </div>
@@ -68,7 +66,7 @@
 
         <div class="search-box">
           <span class="search-icon">🔍</span>
-          <input type="text" class="search-input" placeholder="Search docs... (Ctrl+K)">
+          <input type="text" class="search-input" placeholder="Search docs...">
         </div>
 
         <div class="header-actions">
@@ -109,38 +107,32 @@
           <div class="feature-grid">
             <div class="feature-card">
               <div class="feature-icon">📋</div>
-              <h3 class="feature-title">Task Management</h3>
-              <p class="feature-description">Create, organize, and execute tasks with customizable commands, arguments, and working directories.</p>
+              <h3 class="feature-title">Templates</h3>
+              <p class="feature-description">Save command configurations as templates with customizable commands, arguments, and working directories.</p>
             </div>
 
             <div class="feature-card">
               <div class="feature-icon">💻</div>
               <h3 class="feature-title">Multi-Terminal</h3>
-              <p class="feature-description">Run multiple terminal instances with full PTY support or lightweight text output.</p>
+              <p class="feature-description">Run multiple terminal instances with full PTY support using xterm emulation.</p>
             </div>
 
             <div class="feature-card">
               <div class="feature-icon">📐</div>
               <h3 class="feature-title">Flexible Layouts</h3>
-              <p class="feature-description">Choose from 10 layout presets and drag-and-drop panes to customize your workspace.</p>
+              <p class="feature-description">Choose from 10 layout presets and assign content to panes to customize your workspace.</p>
             </div>
 
             <div class="feature-card">
               <div class="feature-icon">⚡</div>
-              <h3 class="feature-title">Script Configs</h3>
-              <p class="feature-description">Define parameterized scripts in JSON files with inputs, validation, and defaults.</p>
-            </div>
-
-            <div class="feature-card">
-              <div class="feature-icon">📊</div>
-              <h3 class="feature-title">Process Monitoring</h3>
-              <p class="feature-description">Track CPU and memory usage in real-time with complete execution history.</p>
+              <h3 class="feature-title">Automation Steps</h3>
+              <p class="feature-description">Define expect/send automation sequences to interact with processes automatically.</p>
             </div>
 
             <div class="feature-card">
               <div class="feature-icon">🎨</div>
               <h3 class="feature-title">Customizable</h3>
-              <p class="feature-description">Dark/light themes, text scaling, terminal styles, and more personalization options.</p>
+              <p class="feature-description">Dark/light themes, text scaling, custom terminal color themes, and more.</p>
             </div>
           </div>
         </section>
@@ -187,34 +179,36 @@ flutter build windows --release</code></pre>
           <h3>1. Launch Marcha</h3>
           <p>After building, run <code>marcha.exe</code> from the release folder or use <code>flutter run -d windows</code> for development.</p>
 
-          <h3>2. Create Your First Task</h3>
+          <h3>2. Create Your First Template</h3>
           <ol>
-            <li>Click the <strong>Add</strong> button in the left sidebar</li>
-            <li>Select <strong>Add Task</strong></li>
+            <li>In the Tasks List pane, click the <strong>+</strong> button</li>
+            <li>Select <strong>Add Template</strong></li>
             <li>Enter a name (e.g., "Dev Server")</li>
-            <li>Set the executable (e.g., <code>npm</code>)</li>
+            <li>Set the command (e.g., <code>npm</code>)</li>
             <li>Add arguments (e.g., <code>run dev</code>)</li>
             <li>Optionally set a working directory</li>
             <li>Choose an emoji icon</li>
             <li>Click <strong>Save</strong></li>
           </ol>
 
-          <h3>3. Run Your Task</h3>
-          <p>Click the 🚀 rocket icon next to your task. The process will start in an available terminal pane.</p>
+          <h3>3. Run Your Template</h3>
+          <p>Click the play button next to your template. A task will be created and started in an available terminal pane.</p>
 
           <h3>4. Monitor and Control</h3>
           <ul>
             <li>View output in real-time in the terminal pane</li>
-            <li>Click the stop button to terminate</li>
+            <li>Click the stop button to terminate the task</li>
             <li>Check execution history in the History pane</li>
           </ul>
         </section>
 
-        <!-- Task Management Section -->
-        <section id="tasks" class="section">
-          <h2>Task Management</h2>
+        <!-- Templates Section -->
+        <section id="templates" class="section">
+          <h2>Templates</h2>
 
-          <h3>Task Properties</h3>
+          <p>Templates are saved command configurations that can be launched repeatedly. When you run a template, it creates a Task - an active running process.</p>
+
+          <h3>Template Properties</h3>
           <table>
             <thead>
               <tr>
@@ -226,17 +220,17 @@ flutter build windows --release</code></pre>
             <tbody>
               <tr>
                 <td><code>name</code></td>
-                <td>Display name for the task</td>
+                <td>Display name for the template</td>
                 <td>Yes</td>
               </tr>
               <tr>
-                <td><code>executable</code></td>
+                <td><code>command</code></td>
                 <td>Command to run (e.g., python, npm, node)</td>
                 <td>Yes</td>
               </tr>
               <tr>
                 <td><code>arguments</code></td>
-                <td>Command-line arguments</td>
+                <td>Command-line arguments (can include placeholders)</td>
                 <td>No</td>
               </tr>
               <tr>
@@ -251,66 +245,59 @@ flutter build windows --release</code></pre>
               </tr>
               <tr>
                 <td><code>description</code></td>
-                <td>Detailed description shown on expand</td>
+                <td>Detailed description</td>
+                <td>No</td>
+              </tr>
+              <tr>
+                <td><code>steps</code></td>
+                <td>Automation steps (expect/send sequences)</td>
                 <td>No</td>
               </tr>
             </tbody>
           </table>
 
-          <h3>Task Groups</h3>
-          <p>Organize related tasks into groups for batch execution:</p>
+          <h3>Placeholders</h3>
+          <p>Use <code>${placeholderName}</code> syntax in commands or arguments to prompt for input before running:</p>
+          <pre><code>command: npm
+arguments: ["run", "${script}"]</code></pre>
+          <p>When launched, Marcha will prompt you to enter a value for <code>script</code>.</p>
+
+          <h3>Template Groups</h3>
+          <p>Organize related templates into groups:</p>
           <ul>
             <li>Create groups from the Add menu</li>
-            <li>Drag tasks into groups</li>
-            <li>Run all tasks in a group sequentially</li>
-            <li>Reorder tasks within groups</li>
+            <li>Add templates to groups</li>
+            <li>Reorder templates within groups</li>
+            <li>Drag templates between groups and the ungrouped list</li>
           </ul>
-
-          <h3>Quick Tasks</h3>
-          <p>Pin frequently used tasks to the Quick Tasks section for one-click access.</p>
         </section>
 
         <!-- Terminals Section -->
         <section id="terminals" class="section">
           <h2>Terminals</h2>
 
-          <h3>Terminal Types</h3>
-          <div class="card">
-            <div class="card-header">
-              <span class="card-icon">⚡</span>
-              <h4 class="card-title">Dev Terminal (Recommended)</h4>
-            </div>
-            <p class="card-description">
-              Full xterm emulation with PTY support. Provides complete terminal functionality including
-              colors, cursor positioning, and interactive applications. Uses <code>flutter_pty</code>
-              and <code>xterm</code> packages.
-            </p>
-          </div>
-
-          <div class="card">
-            <div class="card-header">
-              <span class="card-icon">📝</span>
-              <h4 class="card-title">Old Terminal</h4>
-            </div>
-            <p class="card-description">
-              Lightweight text-based output display. Lower resource usage but limited to text output
-              without full terminal emulation. Good for simple command output.
-            </p>
-          </div>
-
-          <h3>Terminal Styles</h3>
-          <ul>
-            <li><strong>Window Style:</strong> Classic look with title bar and rounded corners</li>
-            <li><strong>Embedded Style:</strong> Borderless, blends with panel layout</li>
-          </ul>
+          <p>
+            Marcha uses full xterm emulation with PTY (pseudo-terminal) support via
+            <code>flutter_pty</code> and <code>xterm</code> packages. This provides complete
+            terminal functionality including colors, cursor positioning, and interactive applications.
+          </p>
 
           <h3>Terminal Features</h3>
           <ul>
-            <li>Copy PID by clicking the PID badge</li>
+            <li>Full ANSI escape sequence support</li>
+            <li>Interactive input for running processes</li>
+            <li>Automatic terminal resizing</li>
+            <li>Customizable color themes</li>
             <li>Copy terminal output</li>
             <li>Clear terminal buffer</li>
-            <li>Send input to interactive processes</li>
-            <li>Resize terminal (affects PTY)</li>
+          </ul>
+
+          <h3>Terminal Themes</h3>
+          <p>Marcha includes several built-in terminal themes and supports creating custom themes with full color customization:</p>
+          <ul>
+            <li>Background colors (main, title bar, input area, border)</li>
+            <li>Text colors (foreground, timestamp, prompt, exit code)</li>
+            <li>Status colors (success, warning, error, running)</li>
           </ul>
         </section>
 
@@ -324,48 +311,59 @@ flutter build windows --release</code></pre>
             <thead>
               <tr>
                 <th>Layout</th>
+                <th>Panes</th>
                 <th>Description</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td>Single</td>
+                <td>1 Pane</td>
+                <td>1</td>
                 <td>One full-width pane</td>
               </tr>
               <tr>
                 <td>2 Columns</td>
+                <td>2</td>
                 <td>Two equal vertical panes</td>
               </tr>
               <tr>
-                <td>3 Columns</td>
-                <td>Three equal vertical panes</td>
-              </tr>
-              <tr>
                 <td>2 Rows</td>
+                <td>2</td>
                 <td>Two equal horizontal panes</td>
               </tr>
               <tr>
+                <td>3 Columns</td>
+                <td>3</td>
+                <td>Three equal vertical panes</td>
+              </tr>
+              <tr>
                 <td>3 Rows</td>
+                <td>3</td>
                 <td>Three equal horizontal panes</td>
               </tr>
               <tr>
                 <td>2 Left + 1 Right</td>
+                <td>3</td>
                 <td>Two stacked panes on left, one large on right</td>
               </tr>
               <tr>
                 <td>1 Left + 2 Right</td>
+                <td>3</td>
                 <td>One large pane on left, two stacked on right</td>
               </tr>
               <tr>
                 <td>2 Top + 1 Bottom</td>
+                <td>3</td>
                 <td>Two panes on top, one wide on bottom</td>
               </tr>
               <tr>
                 <td>1 Top + 2 Bottom</td>
+                <td>3</td>
                 <td>One wide pane on top, two on bottom</td>
               </tr>
               <tr>
                 <td>2x2 Grid</td>
+                <td>4</td>
                 <td>Four equal quadrants</td>
               </tr>
             </tbody>
@@ -373,107 +371,17 @@ flutter build windows --release</code></pre>
 
           <h3>Pane Types</h3>
           <ul>
-            <li><strong>Tasks List:</strong> Shows your tasks, groups, and scripts</li>
-            <li><strong>Running History:</strong> Displays execution history and scheduled tasks</li>
+            <li><strong>Tasks List:</strong> Shows your templates and groups</li>
+            <li><strong>History:</strong> Displays execution history</li>
             <li><strong>Terminal:</strong> Terminal instance for process output</li>
+            <li><strong>Empty:</strong> Available slot for terminals</li>
           </ul>
 
-          <h3>Drag and Drop</h3>
-          <p>Drag pane headers to swap positions. Layout state persists across sessions.</p>
-        </section>
+          <h3>Resizable Panes</h3>
+          <p>Drag the dividers between panes to resize them. Pane sizes are saved per layout preset and persist across sessions.</p>
 
-        <!-- Script Configuration Section -->
-        <section id="scripts" class="section">
-          <h2>Script Configuration</h2>
-
-          <p>
-            Define reusable, parameterized scripts in <code>marcha.config.json</code> files.
-            Place this file in your project root and load it in Marcha.
-          </p>
-
-          <h3>File Structure</h3>
-          <pre><code>{
-  "version": "1.0",
-  "project": {
-    "name": "My Project",
-    "description": "Project scripts",
-    "workingDirectory": "."
-  },
-  "scripts": [
-    {
-      "id": "unique-id",
-      "name": "Script Name",
-      "description": "What this script does",
-      "executable": "python",
-      "script": "scripts/my_script.py",
-      "arguments": ["--flag"],
-      "workingDirectory": ".",
-      "emoji": "🐍",
-      "category": "Development",
-      "inputs": [...],
-      "environment": {
-        "DEBUG": "true"
-      }
-    }
-  ]
-}</code></pre>
-
-          <h3>Input Types</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Type</th>
-                <th>Description</th>
-                <th>UI Control</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><code>string</code></td>
-                <td>Text input</td>
-                <td>Text field</td>
-              </tr>
-              <tr>
-                <td><code>number</code></td>
-                <td>Numeric input with optional min/max</td>
-                <td>Number field</td>
-              </tr>
-              <tr>
-                <td><code>boolean</code></td>
-                <td>True/false toggle</td>
-                <td>Checkbox</td>
-              </tr>
-              <tr>
-                <td><code>file</code></td>
-                <td>File path selection</td>
-                <td>File picker</td>
-              </tr>
-              <tr>
-                <td><code>directory</code></td>
-                <td>Directory path selection</td>
-                <td>Folder picker</td>
-              </tr>
-              <tr>
-                <td><code>select</code></td>
-                <td>Choice from predefined options</td>
-                <td>Dropdown</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <h3>Input Definition Example</h3>
-          <pre><code>{
-  "id": "environment",
-  "name": "Environment",
-  "type": "select",
-  "required": true,
-  "options": [
-    {"value": "dev", "label": "Development"},
-    {"value": "prod", "label": "Production"}
-  ],
-  "default": "dev",
-  "placeholder": "Select environment"
-}</code></pre>
+          <h3>Minimized Panes</h3>
+          <p>When Tasks List or History is replaced by a terminal, it becomes "minimized" and can be restored from the dropdown menu.</p>
         </section>
 
         <!-- History Section -->
@@ -484,97 +392,107 @@ flutter build windows --release</code></pre>
 
           <h3>History Entry Data</h3>
           <ul>
-            <li><strong>Task Name:</strong> Name of the executed task</li>
-            <li><strong>Launch Time:</strong> When the task started</li>
-            <li><strong>End Time:</strong> When the task completed</li>
-            <li><strong>Duration:</strong> How long it ran</li>
-            <li><strong>Exit Code:</strong> Process exit code (0 = success)</li>
-            <li><strong>Status:</strong> Running, Completed, Failed, or Stopped</li>
-            <li><strong>PID:</strong> Process ID (for running tasks)</li>
-            <li><strong>Launch Type:</strong> Direct or Scheduled</li>
+            <li><strong>Task Name:</strong> Name of the executed template</li>
+            <li><strong>Start Time:</strong> When the task started</li>
+            <li><strong>End Time:</strong> When the task completed (if finished)</li>
+            <li><strong>Status:</strong> Running, Completed, Stopped, Error, or Archived</li>
+            <li><strong>Command:</strong> The full command that was executed</li>
           </ul>
 
           <h3>History Actions</h3>
           <ul>
             <li><strong>Show in Pane:</strong> Display running task in a terminal slot</li>
             <li><strong>Stop:</strong> Terminate a running process</li>
-            <li><strong>Hide:</strong> Dismiss from default view</li>
+            <li><strong>Archive:</strong> Hide entry from default view</li>
             <li><strong>Delete:</strong> Permanently remove entry</li>
-            <li><strong>Hide All:</strong> Dismiss all non-running entries</li>
-            <li><strong>Delete All:</strong> Clear all history</li>
+            <li><strong>Clear Completed:</strong> Remove all non-running entries</li>
           </ul>
+
+          <h3>Status Colors</h3>
+          <ul>
+            <li><span style="color: #50FA7B;">●</span> <strong>Running:</strong> Task is currently executing</li>
+            <li><span style="color: #6272A4;">●</span> <strong>Completed:</strong> Task finished successfully</li>
+            <li><span style="color: #FFB86C;">●</span> <strong>Stopped:</strong> Task was manually stopped</li>
+            <li><span style="color: #FF5555;">●</span> <strong>Error:</strong> Task encountered an error</li>
+          </ul>
+        </section>
+
+        <!-- Automation Section -->
+        <section id="automation" class="section">
+          <h2>Automation Steps</h2>
+
+          <p>
+            Automation steps allow you to define expect/send sequences that automatically interact
+            with a process. This is useful for automated logins, menu navigation, or any interactive
+            command-line workflow.
+          </p>
+
+          <h3>Step Properties</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Property</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>expect</code></td>
+                <td>Pattern (regex or plain text) to wait for in output</td>
+              </tr>
+              <tr>
+                <td><code>send</code></td>
+                <td>Text to send when pattern is matched (can include placeholders)</td>
+              </tr>
+              <tr>
+                <td><code>timeout</code></td>
+                <td>Milliseconds to wait before timing out (default: 30000)</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>Example: Auto-login to SSH</h3>
+          <pre><code>Template:
+  command: ssh
+  arguments: ["user@server.com"]
+  steps:
+    - expect: "password:"
+      send: "${password}"
+      timeout: 10000
+    - expect: "\\$"
+      send: "cd /var/www"</code></pre>
+
+          <h3>Step Execution Status</h3>
+          <ul>
+            <li><strong>Waiting:</strong> Watching output for pattern match</li>
+            <li><strong>Completed:</strong> All steps finished successfully</li>
+            <li><strong>Timed Out:</strong> Pattern not found within timeout</li>
+          </ul>
+
+          <p>If a step times out, you can retry the current step or skip it. Once all steps complete, the terminal becomes fully interactive.</p>
         </section>
 
         <!-- Settings Section -->
         <section id="settings" class="section">
           <h2>Settings</h2>
 
-          <h3>Appearance</h3>
+          <h3>Interface</h3>
           <ul>
-            <li><strong>Dark Mode:</strong> Toggle dark/light theme</li>
-            <li><strong>Text Size:</strong> Small, Medium, Large, or Extra Large</li>
+            <li><strong>UI Scale:</strong> Small (1x), Medium (1.2x), Large (1.4x), or Extra Large (1.6x)</li>
+            <li><strong>Theme:</strong> Dark or Light mode</li>
           </ul>
 
           <h3>Terminal</h3>
           <ul>
-            <li><strong>Terminal Type:</strong> Dev Terminal or Old Terminal</li>
-            <li><strong>Terminal Style:</strong> Window or Embedded</li>
-            <li><strong>Terminal Theme:</strong> Color scheme selection</li>
-            <li><strong>Font Size:</strong> Independent terminal text scaling</li>
+            <li><strong>Font Size:</strong> Independent scaling for terminal text (S/M/L/XL)</li>
+            <li><strong>Color Theme:</strong> Select from built-in themes or create custom ones</li>
+            <li><strong>Customize Colors:</strong> Edit individual colors in the current theme</li>
           </ul>
 
-          <h3>Process Management</h3>
+          <h3>Limits</h3>
           <ul>
-            <li><strong>Max Concurrent Tasks:</strong> Limit simultaneous processes (1-20, default 10)</li>
+            <li><strong>Max Concurrent Tasks:</strong> Limit simultaneous processes (1-50, default 10)</li>
           </ul>
-        </section>
-
-        <!-- Config File Section -->
-        <section id="config-file" class="section">
-          <h2>marcha.config.json Reference</h2>
-
-          <p>Complete schema for script configuration files:</p>
-
-          <pre><code>{
-  "version": "1.0",
-  "project": {
-    "name": "string (required)",
-    "description": "string (optional)",
-    "workingDirectory": "string (optional, relative to config file)"
-  },
-  "scripts": [
-    {
-      "id": "string (required, unique)",
-      "name": "string (required)",
-      "description": "string (optional)",
-      "executable": "string (required, e.g., 'python', 'npm')",
-      "script": "string (optional, path to script file)",
-      "arguments": ["array", "of", "strings"],
-      "workingDirectory": "string (optional)",
-      "emoji": "string (optional, single emoji)",
-      "category": "string (optional, for grouping)",
-      "inputs": [
-        {
-          "id": "string (required)",
-          "name": "string (required)",
-          "type": "string|number|boolean|file|directory|select",
-          "required": "boolean (default: false)",
-          "default": "any (type-appropriate)",
-          "placeholder": "string (optional)",
-          "min": "number (for number type)",
-          "max": "number (for number type)",
-          "flag": "string (for boolean, flag to add when true)",
-          "options": [
-            {"value": "any", "label": "string"}
-          ]
-        }
-      ],
-      "environment": {
-        "KEY": "value"
-      }
-    }
-  ]
-}</code></pre>
         </section>
 
         <!-- Data Storage Section -->
@@ -592,32 +510,24 @@ flutter build windows --release</code></pre>
             </thead>
             <tbody>
               <tr>
-                <td><code>marcha_settings.json</code></td>
-                <td>Application settings (theme, text size, etc.)</td>
+                <td><code>settings.json</code></td>
+                <td>Application settings (theme, text size, layout state, terminal themes)</td>
               </tr>
               <tr>
-                <td><code>marcha_tasks.json</code></td>
-                <td>Task definitions</td>
+                <td><code>templates.json</code></td>
+                <td>Saved template definitions</td>
               </tr>
               <tr>
-                <td><code>marcha_task_groups.json</code></td>
-                <td>Task group configurations</td>
+                <td><code>task_groups.json</code></td>
+                <td>Template group configurations</td>
               </tr>
               <tr>
-                <td><code>marcha_task_history.json</code></td>
+                <td><code>display_order.json</code></td>
+                <td>Order of templates and groups in the list</td>
+              </tr>
+              <tr>
+                <td><code>history.json</code></td>
                 <td>Execution history records</td>
-              </tr>
-              <tr>
-                <td><code>marcha_layout.json</code></td>
-                <td>Layout preset and pane assignments</td>
-              </tr>
-              <tr>
-                <td><code>marcha_script_configs.json</code></td>
-                <td>Paths to loaded config files</td>
-              </tr>
-              <tr>
-                <td><code>marcha_preferences.json</code></td>
-                <td>UI state preferences</td>
               </tr>
             </tbody>
           </table>
@@ -629,38 +539,6 @@ flutter build windows --release</code></pre>
               <p>These JSON files are human-readable and can be backed up or edited manually if needed.</p>
             </div>
           </div>
-        </section>
-
-        <!-- Keyboard Shortcuts Section -->
-        <section id="keyboard-shortcuts" class="section">
-          <h2>Keyboard Shortcuts</h2>
-
-          <table>
-            <thead>
-              <tr>
-                <th>Shortcut</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><code>Ctrl + N</code></td>
-                <td>New task</td>
-              </tr>
-              <tr>
-                <td><code>Ctrl + ,</code></td>
-                <td>Open settings</td>
-              </tr>
-              <tr>
-                <td><code>Ctrl + K</code></td>
-                <td>Focus search (in docs)</td>
-              </tr>
-              <tr>
-                <td><code>Escape</code></td>
-                <td>Clear search / Close dialogs</td>
-              </tr>
-            </tbody>
-          </table>
         </section>
 
         <!-- Troubleshooting Section -->
@@ -677,14 +555,13 @@ flutter build windows --release</code></pre>
 
           <h3>Terminal shows garbled output</h3>
           <ul>
-            <li>Try switching to Dev Terminal type in settings</li>
             <li>Ensure the process outputs UTF-8 encoded text</li>
             <li>For Python, the app automatically sets PYTHONIOENCODING=utf-8</li>
           </ul>
 
           <h3>Process won't stop</h3>
           <ul>
-            <li>Marcha first sends Ctrl+C, then waits 3 seconds</li>
+            <li>Marcha first sends Ctrl+C, then waits before force-killing</li>
             <li>If still running, it force-kills the process tree</li>
             <li>Use Task Manager if Marcha can't terminate it</li>
           </ul>
@@ -692,14 +569,15 @@ flutter build windows --release</code></pre>
           <h3>Layout not saving</h3>
           <ul>
             <li>Check write permissions to %APPDATA%\Marcha\</li>
-            <li>Try deleting <code>marcha_layout.json</code> to reset</li>
+            <li>Try deleting <code>settings.json</code> to reset</li>
           </ul>
 
-          <h3>Scripts not loading</h3>
+          <h3>Automation step timing out</h3>
           <ul>
-            <li>Verify JSON syntax in marcha.config.json</li>
-            <li>Check that all required fields are present</li>
-            <li>Ensure paths are valid (use forward slashes or escaped backslashes)</li>
+            <li>Verify the expect pattern matches actual output</li>
+            <li>Increase the timeout value for slow processes</li>
+            <li>Check that the regex syntax is valid</li>
+            <li>Use plain text matching for simple patterns</li>
           </ul>
         </section>
 

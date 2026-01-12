@@ -13,12 +13,7 @@ class ResizableDivider extends StatefulWidget {
   final RatioGroup ratioGroup;
   final int dividerIndex;
 
-  const ResizableDivider({
-    super.key,
-    required this.axis,
-    required this.ratioGroup,
-    required this.dividerIndex,
-  });
+  const ResizableDivider({super.key, required this.axis, required this.ratioGroup, required this.dividerIndex});
 
   @override
   State<ResizableDivider> createState() => _ResizableDividerState();
@@ -36,13 +31,10 @@ class _ResizableDividerState extends State<ResizableDivider> {
     return LayoutBuilder(
       builder: (context, constraints) {
         // Get the total size in the drag direction
-        final totalSize =
-            isVertical ? constraints.maxHeight : constraints.maxWidth;
+        final totalSize = isVertical ? constraints.maxHeight : constraints.maxWidth;
 
         return MouseRegion(
-          cursor: isVertical
-              ? SystemMouseCursors.resizeColumn
-              : SystemMouseCursors.resizeRow,
+          cursor: isVertical ? SystemMouseCursors.resizeColumn : SystemMouseCursors.resizeRow,
           onEnter: (_) => setState(() => _isHovering = true),
           onExit: (_) {
             if (!_isDragging) {
@@ -51,20 +43,12 @@ class _ResizableDividerState extends State<ResizableDivider> {
           },
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onHorizontalDragStart:
-                isVertical ? (_) => _onDragStart() : null,
-            onHorizontalDragUpdate: isVertical
-                ? (details) => _onDragUpdate(details.delta.dx, totalSize)
-                : null,
-            onHorizontalDragEnd:
-                isVertical ? (_) => _onDragEnd() : null,
-            onVerticalDragStart:
-                !isVertical ? (_) => _onDragStart() : null,
-            onVerticalDragUpdate: !isVertical
-                ? (details) => _onDragUpdate(details.delta.dy, totalSize)
-                : null,
-            onVerticalDragEnd:
-                !isVertical ? (_) => _onDragEnd() : null,
+            onHorizontalDragStart: isVertical ? (_) => _onDragStart() : null,
+            onHorizontalDragUpdate: isVertical ? (details) => _onDragUpdate(details.delta.dx, totalSize) : null,
+            onHorizontalDragEnd: isVertical ? (_) => _onDragEnd() : null,
+            onVerticalDragStart: !isVertical ? (_) => _onDragStart() : null,
+            onVerticalDragUpdate: !isVertical ? (details) => _onDragUpdate(details.delta.dy, totalSize) : null,
+            onVerticalDragEnd: !isVertical ? (_) => _onDragEnd() : null,
             // Stack: line fills full size, grip handle overlays on hover
             child: Stack(
               alignment: Alignment.center,
@@ -74,19 +58,12 @@ class _ResizableDividerState extends State<ResizableDivider> {
                   duration: const Duration(milliseconds: 150),
                   width: isVertical ? 1 : double.infinity,
                   height: !isVertical ? 1 : double.infinity,
-                  color: _isHovering || _isDragging
-                      ? colors.borderLight
-                      : colors.border,
+                  color: _isHovering || _isDragging ? colors.borderLight : colors.border,
                 ),
                 // Invisible hit target area (wider for easier grabbing)
-                Container(
-                  width: isVertical ? 9 : double.infinity,
-                  height: !isVertical ? 9 : double.infinity,
-                  color: Colors.transparent,
-                ),
+                Container(width: isVertical ? 1 : double.infinity, height: !isVertical ? 1 : double.infinity, color: Colors.transparent),
                 // Grip handle on hover
-                if (_isHovering || _isDragging)
-                  _buildGripHandle(isVertical, colors),
+                if (_isHovering || _isDragging) _buildGripHandle(isVertical, colors),
               ],
             ),
           ),
@@ -105,34 +82,22 @@ class _ResizableDividerState extends State<ResizableDivider> {
       return Container(
         width: dotSize,
         height: dotSize,
-        decoration: BoxDecoration(
-          color: colors.textMuted.withValues(alpha: 0.6),
-          shape: BoxShape.circle,
-        ),
+        decoration: BoxDecoration(color: colors.textMuted.withValues(alpha: 0.6), shape: BoxShape.circle),
       );
     });
 
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isVertical ? 0 : 8,
-        vertical: isVertical ? 8 : 0,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: isVertical ? 0 : 8, vertical: isVertical ? 8 : 0),
       child: isVertical
           ? Column(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
-              children: dots
-                  .expand((dot) => [dot, SizedBox(height: dotSpacing)])
-                  .take(dotCount * 2 - 1)
-                  .toList(),
+              children: dots.expand((dot) => [dot, SizedBox(height: dotSpacing)]).take(dotCount * 2 - 1).toList(),
             )
           : Row(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
-              children: dots
-                  .expand((dot) => [dot, SizedBox(width: dotSpacing)])
-                  .take(dotCount * 2 - 1)
-                  .toList(),
+              children: dots.expand((dot) => [dot, SizedBox(width: dotSpacing)]).take(dotCount * 2 - 1).toList(),
             ),
     );
   }

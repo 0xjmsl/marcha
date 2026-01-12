@@ -11,12 +11,13 @@ class ProcessManagerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColorsExtension.of(context);
+    final styles = AppTheme.of(context);
 
     return Container(
       color: colors.background,
       child: Column(
         children: [
-          _buildToolbar(colors),
+          _buildToolbar(colors, styles.scale),
           const Expanded(
             child: PaneLayoutBuilder(),
           ),
@@ -25,9 +26,9 @@ class ProcessManagerScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildToolbar(AppColorScheme colors) {
+  Widget _buildToolbar(AppColorScheme colors, double scale) {
     return Container(
-      height: 36,
+      height: 36 * scale,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: colors.surface,

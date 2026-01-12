@@ -18,10 +18,7 @@ import 'terminal_view.dart';
 class LayoutPane extends StatelessWidget {
   final int slotIndex;
 
-  const LayoutPane({
-    super.key,
-    required this.slotIndex,
-  });
+  const LayoutPane({super.key, required this.slotIndex});
 
   @override
   Widget build(BuildContext context) {
@@ -33,8 +30,14 @@ class LayoutPane extends StatelessWidget {
         final slot = core.layout.getSlot(slotIndex);
         if (slot == null) return const SizedBox.shrink();
 
+        // Check if this pane should be highlighted (its task is being hovered in history)
+        final isHighlighted = slot.isTerminal && slot.contentId != null && core.layout.hoveredTaskId == slot.contentId;
+
         return Container(
-          color: colors.background,
+          decoration: BoxDecoration(
+            color: colors.background,
+            border: isHighlighted ? Border.all(color: const Color.fromARGB(255, 124, 212, 138), width: 1) : null,
+          ),
           child: switch (slot.contentType) {
             SlotContentType.empty => _EmptyPane(slotIndex: slotIndex),
             SlotContentType.tasksList => _TasksListPane(slotIndex: slotIndex),
@@ -55,13 +58,7 @@ class _PaneHeader extends StatelessWidget {
   final String? info;
   final List<Widget>? actions;
 
-  const _PaneHeader({
-    required this.icon,
-    required this.title,
-    this.iconColor,
-    this.info,
-    this.actions,
-  });
+  const _PaneHeader({required this.icon, required this.title, this.iconColor, this.info, this.actions});
 
   @override
   Widget build(BuildContext context) {
@@ -78,30 +75,14 @@ class _PaneHeader extends StatelessWidget {
         children: [
           Icon(icon, size: 14, color: iconColor ?? colors.textMuted),
           const SizedBox(width: 6),
-          Flexible(
+          Expanded(
             child: Text(
               title.toUpperCase(),
-              style: AppTheme.monoSmall.copyWith(
-                color: colors.textMuted,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1,
-                fontSize: 10,
-              ),
+              style: AppTheme.monoSmall.copyWith(color: colors.textMuted, fontWeight: FontWeight.bold, letterSpacing: 1, fontSize: 10),
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          const Spacer(),
-          if (info != null)
-            Flexible(
-              child: Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: Text(
-                  info!,
-                  style: AppTheme.monoSmall.copyWith(color: colors.textMuted, fontSize: 10),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
+          if (info != null) ...[Text(info!, style: AppTheme.monoSmall.copyWith(color: colors.textMuted, fontSize: 10)), const SizedBox(width: 8)],
           if (actions != null) ...actions!,
         ],
       ),
@@ -121,10 +102,7 @@ class _EmptyPane extends StatelessWidget {
 
     return Column(
       children: [
-        _PaneHeader(
-          icon: Icons.dashboard,
-          title: 'Slot ${slotIndex + 1}',
-        ),
+        _PaneHeader(icon: Icons.dashboard, title: 'Slot ${slotIndex + 1}'),
         Expanded(
           child: Center(
             child: Column(
@@ -132,10 +110,7 @@ class _EmptyPane extends StatelessWidget {
               children: [
                 Icon(Icons.add_circle_outline, size: 32, color: colors.textMuted),
                 const SizedBox(height: 8),
-                Text(
-                  'Empty Slot',
-                  style: AppTheme.bodySmall.copyWith(color: colors.textMuted),
-                ),
+                Text('Empty Slot', style: AppTheme.bodySmall.copyWith(color: colors.textMuted)),
               ],
             ),
           ),
@@ -165,27 +140,14 @@ class _TasksListPane extends StatelessWidget {
           iconColor: AppColors.info,
           info: '$totalCount',
           actions: [
-            _HeaderButton(
-              icon: Icons.create_new_folder,
-              tooltip: 'Add Group',
-              color: colors.textSecondary,
-              onTap: () => TaskGroupEditScreen.show(context),
-            ),
-            _HeaderButton(
-              icon: Icons.add,
-              tooltip: 'Add Task',
-              color: AppColors.info,
-              onTap: () => TemplateEditScreen.show(context),
-            ),
+            _HeaderButton(icon: Icons.create_new_folder, tooltip: 'Add Group', color: colors.textSecondary, onTap: () => TaskGroupEditScreen.show(context)),
+            _HeaderButton(icon: Icons.add, tooltip: 'Add Task', color: AppColors.info, onTap: () => TemplateEditScreen.show(context)),
           ],
         ),
         Expanded(
           child: displayOrder.isEmpty
               ? Center(
-                  child: Text(
-                    'No tasks configured',
-                    style: AppTheme.bodySmall.copyWith(color: colors.textMuted),
-                  ),
+                  child: Text('No tasks configured', style: AppTheme.bodySmall.copyWith(color: colors.textMuted)),
                 )
               : ReorderableListView.builder(
                   buildDefaultDragHandles: false,
@@ -200,21 +162,13 @@ class _TasksListPane extends StatelessWidget {
                       if (group == null) {
                         return SizedBox.shrink(key: ValueKey('missing_group_${item.id}'));
                       }
-                      return _GroupRow(
-                        key: ValueKey('group_${item.id}'),
-                        group: group,
-                        index: index,
-                      );
+                      return _GroupRow(key: ValueKey('group_${item.id}'), group: group, index: index);
                     } else {
                       final template = core.templates.getById(item.id);
                       if (template == null) {
                         return SizedBox.shrink(key: ValueKey('missing_template_${item.id}'));
                       }
-                      return _TemplateRow(
-                        key: ValueKey('template_${item.id}'),
-                        template: template,
-                        index: index,
-                      );
+                      return _TemplateRow(key: ValueKey('template_${item.id}'), template: template, index: index);
                     }
                   },
                 ),
@@ -287,11 +241,7 @@ class _GroupRowState extends State<_GroupRow> {
     final templates = widget.group.getOrderedTemplates(core.templates.all);
     for (final template in templates) {
       if (!mounted) return;
-      final targetSlot = await PaneTargetSelector.show(
-        context,
-        title: 'Select Pane for ${template.name}',
-        subtitle: '${templates.indexOf(template) + 1} of ${templates.length}',
-      );
+      final targetSlot = await PaneTargetSelector.show(context, title: 'Select Pane for ${template.name}', subtitle: '${templates.indexOf(template) + 1} of ${templates.length}');
       if (targetSlot == null || !mounted) break; // User cancelled
       final task = await PlaceholderInputDialog.launchTemplate(context, template);
       if (task == null || !mounted) break; // User cancelled placeholder input
@@ -324,33 +274,18 @@ class _GroupRowState extends State<_GroupRow> {
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      _isExpanded ? Icons.expand_more : Icons.chevron_right,
-                      size: 16,
-                      color: colors.textMuted,
-                    ),
+                    Icon(_isExpanded ? Icons.expand_more : Icons.chevron_right, size: 16, color: colors.textMuted),
                     const SizedBox(width: 4),
                     Text(widget.group.emoji, style: const TextStyle(fontSize: 12)),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         widget.group.name.toUpperCase(),
-                        style: AppTheme.monoSmall.copyWith(
-                          color: colors.textMuted,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1,
-                          fontSize: 10,
-                        ),
+                        style: AppTheme.monoSmall.copyWith(color: colors.textMuted, fontWeight: FontWeight.bold, letterSpacing: 1, fontSize: 10),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    Text(
-                      '${templates.length}',
-                      style: AppTheme.monoSmall.copyWith(
-                        color: colors.textMuted,
-                        fontSize: 10,
-                      ),
-                    ),
+                    Text('${templates.length}', style: AppTheme.monoSmall.copyWith(color: colors.textMuted, fontSize: 10)),
                     if (_isHovered) ...[
                       const SizedBox(width: 4),
                       GestureDetector(
@@ -379,12 +314,7 @@ class _GroupRowState extends State<_GroupRow> {
         ),
         // Tasks inside group
         if (_isExpanded)
-          for (final template in templates)
-            _TemplateRow(
-              template: template,
-              inGroup: true,
-              groupId: widget.group.id,
-            ),
+          for (final template in templates) _TemplateRow(template: template, inGroup: true, groupId: widget.group.id),
       ],
     );
   }
@@ -397,13 +327,7 @@ class _TemplateRow extends StatefulWidget {
   final int? index; // Index for drag handle (null = no drag handle)
   final String? groupId; // Group ID if inside a group (for ungrouping)
 
-  const _TemplateRow({
-    super.key,
-    required this.template,
-    this.inGroup = false,
-    this.index,
-    this.groupId,
-  });
+  const _TemplateRow({super.key, required this.template, this.inGroup = false, this.index, this.groupId});
 
   @override
   State<_TemplateRow> createState() => _TemplateRowState();
@@ -414,11 +338,7 @@ class _TemplateRowState extends State<_TemplateRow> {
 
   Future<void> _launchTemplate() async {
     // Show pane selector
-    final targetSlot = await PaneTargetSelector.show(
-      context,
-      title: 'Select Target Pane',
-      subtitle: widget.template.name,
-    );
+    final targetSlot = await PaneTargetSelector.show(context, title: 'Select Target Pane', subtitle: widget.template.name);
 
     if (targetSlot == null || !mounted) return;
 
@@ -444,10 +364,7 @@ class _TemplateRowState extends State<_TemplateRow> {
         _buildMenuItem('run', Icons.play_arrow, 'Run', AppColors.running, colors),
         _buildMenuItem('edit', Icons.edit, 'Edit', colors.textPrimary, colors),
         _buildMenuItem('duplicate', Icons.copy, 'Duplicate', colors.textPrimary, colors),
-        if (isGrouped) ...[
-          const PopupMenuDivider(),
-          _buildMenuItem('ungroup', Icons.folder_off, 'Remove from Group', AppColors.warning, colors),
-        ],
+        if (isGrouped) ...[const PopupMenuDivider(), _buildMenuItem('ungroup', Icons.folder_off, 'Remove from Group', AppColors.warning, colors)],
         const PopupMenuDivider(),
         _buildMenuItem('delete', Icons.delete, 'Delete', AppColors.error, colors),
       ],
@@ -487,10 +404,7 @@ class _TemplateRowState extends State<_TemplateRow> {
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onSecondaryTapDown: (details) => _showContextMenu(details.globalPosition),
-        child: _buildRowContent(),
-      ),
+      child: GestureDetector(onSecondaryTapDown: (details) => _showContextMenu(details.globalPosition), child: _buildRowContent()),
     );
   }
 
@@ -512,10 +426,7 @@ class _TemplateRowState extends State<_TemplateRow> {
               width: 6,
               height: 6,
               margin: const EdgeInsets.only(left: 4, right: 6),
-              decoration: BoxDecoration(
-                color: colors.textMuted,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: colors.textMuted, shape: BoxShape.circle),
             ),
           ],
           Text(widget.template.emoji, style: const TextStyle(fontSize: 14)),
@@ -534,10 +445,7 @@ class _TemplateRowState extends State<_TemplateRow> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if (widget.template.hasSteps) ...[
-                      const SizedBox(width: 6),
-                      _SteppedBadge(),
-                    ],
+                    if (widget.template.hasSteps) ...[const SizedBox(width: 6), _SteppedBadge()],
                   ],
                 ),
                 Text(
@@ -574,10 +482,7 @@ class _TemplateRowState extends State<_TemplateRow> {
 
     // Wrap in drag listener for ungrouped templates
     if (widget.index != null) {
-      return ReorderableDragStartListener(
-        index: widget.index!,
-        child: content,
-      );
+      return ReorderableDragStartListener(index: widget.index!, child: content);
     }
     return content;
   }
@@ -602,27 +507,16 @@ class _HistoryPane extends StatelessWidget {
           title: 'History',
           iconColor: AppColors.info,
           info: runningCount > 0 ? '$runningCount running' : null,
-          actions: entries.isNotEmpty ? [
-            _HeaderButton(
-              icon: Icons.clear_all,
-              tooltip: 'Clear completed',
-              onTap: () => core.history.clearCompleted(),
-            ),
-          ] : null,
+          actions: entries.isNotEmpty ? [_HeaderButton(icon: Icons.clear_all, tooltip: 'Clear completed', onTap: () => core.history.clearCompleted())] : null,
         ),
         Expanded(
           child: entries.isEmpty
               ? Center(
-                  child: Text(
-                    'No history',
-                    style: AppTheme.bodySmall.copyWith(color: colors.textMuted),
-                  ),
+                  child: Text('No history', style: AppTheme.bodySmall.copyWith(color: colors.textMuted)),
                 )
               : ListView.builder(
                   itemCount: entries.length,
-                  itemBuilder: (context, index) => _HistoryRow(
-                    entry: entries[index],
-                  ),
+                  itemBuilder: (context, index) => _HistoryRow(entry: entries[index]),
                 ),
         ),
       ],
@@ -673,11 +567,7 @@ class _HistoryRowState extends State<_HistoryRow> {
     if (widget.entry.taskId == null) return;
 
     // Show pane selector
-    final targetSlot = await PaneTargetSelector.show(
-      context,
-      title: 'Select Pane',
-      subtitle: widget.entry.name,
-    );
+    final targetSlot = await PaneTargetSelector.show(context, title: 'Select Pane', subtitle: widget.entry.name);
 
     if (targetSlot == null || !mounted) return;
 
@@ -687,11 +577,7 @@ class _HistoryRowState extends State<_HistoryRow> {
 
   Future<void> _viewLog() async {
     // Show pane selector for log view
-    final targetSlot = await PaneTargetSelector.show(
-      context,
-      title: 'View Log',
-      subtitle: widget.entry.name,
-    );
+    final targetSlot = await PaneTargetSelector.show(context, title: 'View Log', subtitle: widget.entry.name);
 
     if (targetSlot == null) return;
 
@@ -704,8 +590,20 @@ class _HistoryRowState extends State<_HistoryRow> {
     final colors = AppColorsExtension.of(context);
 
     return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
+      onEnter: (_) {
+        setState(() => _isHovered = true);
+        // Notify layout of hovered task for pane highlight
+        if (widget.entry.isRunning && widget.entry.taskId != null) {
+          core.layout.setHoveredTaskId(widget.entry.taskId);
+        }
+      },
+      onExit: (_) {
+        setState(() => _isHovered = false);
+        // Clear hovered task
+        if (widget.entry.isRunning && widget.entry.taskId != null) {
+          core.layout.setHoveredTaskId(null);
+        }
+      },
       child: Container(
         height: 40,
         padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -719,16 +617,10 @@ class _HistoryRowState extends State<_HistoryRow> {
             Container(
               width: 8,
               height: 8,
-              decoration: BoxDecoration(
-                color: _statusColor(colors),
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: _statusColor(colors), shape: BoxShape.circle),
             ),
             const SizedBox(width: 8),
-            if (widget.entry.emoji.isNotEmpty) ...[
-              Text(widget.entry.emoji, style: const TextStyle(fontSize: 12)),
-              const SizedBox(width: 6),
-            ],
+            if (widget.entry.emoji.isNotEmpty) ...[Text(widget.entry.emoji, style: const TextStyle(fontSize: 12)), const SizedBox(width: 6)],
             Expanded(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -743,19 +635,13 @@ class _HistoryRowState extends State<_HistoryRow> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (_hasSteps()) ...[
-                        const SizedBox(width: 6),
-                        _SteppedBadge(),
-                      ],
+                      if (_hasSteps()) ...[const SizedBox(width: 6), _SteppedBadge()],
                     ],
                   ),
                   Flexible(
                     child: Row(
                       children: [
-                        Text(
-                          _formatTime(widget.entry.startedAt),
-                          style: AppTheme.monoSmall.copyWith(color: colors.textMuted, fontSize: 10),
-                        ),
+                        Text(_formatTime(widget.entry.startedAt), style: AppTheme.monoSmall.copyWith(color: colors.textMuted, fontSize: 10)),
                         Flexible(
                           child: Text(
                             ' · ${widget.entry.durationString}',
@@ -771,31 +657,17 @@ class _HistoryRowState extends State<_HistoryRow> {
             ),
             if (_isHovered) ...[
               if (widget.entry.isRunning) ...[
+                // Green if task is visible on a pane, blue otherwise
                 _RowButton(
                   icon: Icons.terminal,
-                  color: AppColors.info,
+                  color: widget.entry.taskId != null && core.layout.findSlotByTaskId(widget.entry.taskId!) != null ? AppColors.running : AppColors.info,
                   tooltip: 'Display',
                   onTap: _displayTask,
                 ),
-                _RowButton(
-                  icon: Icons.stop,
-                  color: AppColors.stopped,
-                  tooltip: 'Stop',
-                  onTap: _stopTask,
-                ),
+                _RowButton(icon: Icons.stop, color: AppColors.stopped, tooltip: 'Stop', onTap: _stopTask),
               ] else ...[
-                _RowButton(
-                  icon: Icons.description,
-                  color: AppColors.info,
-                  tooltip: 'View Log',
-                  onTap: _viewLog,
-                ),
-                _RowButton(
-                  icon: Icons.delete,
-                  color: AppColors.error,
-                  tooltip: 'Delete',
-                  onTap: () => core.history.remove(widget.entry.id),
-                ),
+                _RowButton(icon: Icons.description, color: AppColors.info, tooltip: 'View Log', onTap: _viewLog),
+                _RowButton(icon: Icons.delete, color: AppColors.error, tooltip: 'Delete', onTap: () => core.history.remove(widget.entry.id)),
               ],
             ],
           ],
@@ -810,10 +682,7 @@ class _TerminalPane extends StatefulWidget {
   final int slotIndex;
   final String? taskId;
 
-  const _TerminalPane({
-    required this.slotIndex,
-    this.taskId,
-  });
+  const _TerminalPane({required this.slotIndex, this.taskId});
 
   @override
   State<_TerminalPane> createState() => _TerminalPaneState();
@@ -864,10 +733,7 @@ class _TerminalPaneState extends State<_TerminalPane> {
     }
 
     // Task exists - show terminal
-    return TerminalView(
-      task: task,
-      onClose: () => core.layout.clearSlot(widget.slotIndex),
-    );
+    return TerminalView(task: task, onClose: () => core.layout.clearSlot(widget.slotIndex));
   }
 
   Widget _buildEmptyTerminal() {
@@ -879,22 +745,13 @@ class _TerminalPaneState extends State<_TerminalPane> {
           icon: Icons.terminal,
           title: 'Terminal',
           iconColor: colors.textMuted,
-          actions: [
-            _HeaderButton(
-              icon: Icons.close,
-              tooltip: 'Close',
-              onTap: () => core.layout.clearSlot(widget.slotIndex),
-            ),
-          ],
+          actions: [_HeaderButton(icon: Icons.close, tooltip: 'Close', onTap: () => core.layout.clearSlot(widget.slotIndex))],
         ),
         Expanded(
           child: Container(
             color: colors.background,
             child: Center(
-              child: Text(
-                'No task assigned',
-                style: AppTheme.bodySmall.copyWith(color: colors.textMuted),
-              ),
+              child: Text('No task assigned', style: AppTheme.bodySmall.copyWith(color: colors.textMuted)),
             ),
           ),
         ),
@@ -908,10 +765,7 @@ class _LogView extends StatefulWidget {
   final int slotIndex;
   final HistoryEntry? entry;
 
-  const _LogView({
-    required this.slotIndex,
-    this.entry,
-  });
+  const _LogView({required this.slotIndex, this.entry});
 
   @override
   State<_LogView> createState() => _LogViewState();
@@ -932,12 +786,7 @@ class _LogViewState extends State<_LogView> {
     final log = await core.logs.get(widget.entry!.id);
     if (log == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No log data available'),
-            duration: Duration(seconds: 2),
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No log data available'), duration: Duration(seconds: 2)));
       }
       return;
     }
@@ -950,23 +799,13 @@ class _LogViewState extends State<_LogView> {
     final defaultFileName = '${safeName}_$dateStr-$timeStr.log';
 
     // Open save file dialog
-    final filePath = await FilePicker.platform.saveFile(
-      dialogTitle: 'Export Log',
-      fileName: defaultFileName,
-      type: FileType.custom,
-      allowedExtensions: ['log', 'txt'],
-    );
+    final filePath = await FilePicker.platform.saveFile(dialogTitle: 'Export Log', fileName: defaultFileName, type: FileType.custom, allowedExtensions: ['log', 'txt']);
 
     if (filePath == null) return; // User cancelled
 
     final result = await core.logs.export(widget.entry!.id, filePath);
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result != null ? 'Log exported to $result' : 'Failed to export log'),
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result != null ? 'Log exported to $result' : 'Failed to export log'), duration: const Duration(seconds: 3)));
     }
   }
 
@@ -985,9 +824,7 @@ class _LogViewState extends State<_LogView> {
             padding: const EdgeInsets.symmetric(horizontal: 8),
             decoration: BoxDecoration(
               color: theme.background,
-              border: Border(
-                bottom: BorderSide(color: theme.borderColor, width: 1),
-              ),
+              border: Border(bottom: BorderSide(color: theme.borderColor, width: 1)),
             ),
             child: Row(
               children: [
@@ -996,11 +833,7 @@ class _LogViewState extends State<_LogView> {
                 Expanded(
                   child: Text(
                     widget.entry != null ? '${widget.entry!.name} (Log)' : 'Log',
-                    style: TextStyle(
-                      color: theme.foreground.withValues(alpha: 0.7),
-                      fontSize: 12,
-                      fontFamily: 'Consolas',
-                    ),
+                    style: TextStyle(color: theme.foreground.withValues(alpha: 0.7), fontSize: 12, fontFamily: 'Consolas'),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -1039,11 +872,7 @@ class _LogViewState extends State<_LogView> {
                     future: core.logs.get(widget.entry!.id),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Center(
-                          child: CircularProgressIndicator(
-                            color: theme.foreground.withValues(alpha: 0.5),
-                          ),
-                        );
+                        return Center(child: CircularProgressIndicator(color: theme.foreground.withValues(alpha: 0.5)));
                       }
 
                       final log = snapshot.data;
@@ -1051,11 +880,7 @@ class _LogViewState extends State<_LogView> {
                         return Center(
                           child: Text(
                             'No log data available',
-                            style: TextStyle(
-                              color: theme.foreground.withValues(alpha: 0.5),
-                              fontFamily: 'Consolas',
-                              fontSize: 14.0 * scale,
-                            ),
+                            style: TextStyle(color: theme.foreground.withValues(alpha: 0.5), fontFamily: 'Consolas', fontSize: 14.0 * scale),
                           ),
                         );
                       }
@@ -1068,64 +893,34 @@ class _LogViewState extends State<_LogView> {
                               // Header info
                               TextSpan(
                                 text: '--- Log for ${log.name} ---\n',
-                                style: TextStyle(
-                                  color: theme.foreground.withValues(alpha: 0.5),
-                                  fontFamily: 'Consolas',
-                                  fontSize: 14.0 * scale,
-                                ),
+                                style: TextStyle(color: theme.foreground.withValues(alpha: 0.5), fontFamily: 'Consolas', fontSize: 14.0 * scale),
                               ),
                               TextSpan(
                                 text: 'Command: ${log.command} ${log.arguments.join(' ')}\n',
-                                style: TextStyle(
-                                  color: theme.foreground.withValues(alpha: 0.5),
-                                  fontFamily: 'Consolas',
-                                  fontSize: 14.0 * scale,
-                                ),
+                                style: TextStyle(color: theme.foreground.withValues(alpha: 0.5), fontFamily: 'Consolas', fontSize: 14.0 * scale),
                               ),
                               if (log.workingDirectory != null)
                                 TextSpan(
                                   text: 'Directory: ${log.workingDirectory!.replaceAll('\\\\', '\\')}\n',
-                                  style: TextStyle(
-                                    color: theme.foreground.withValues(alpha: 0.5),
-                                    fontFamily: 'Consolas',
-                                    fontSize: 14.0 * scale,
-                                  ),
+                                  style: TextStyle(color: theme.foreground.withValues(alpha: 0.5), fontFamily: 'Consolas', fontSize: 14.0 * scale),
                                 ),
                               TextSpan(
                                 text: 'Duration: ${log.durationString}',
-                                style: TextStyle(
-                                  color: theme.foreground.withValues(alpha: 0.5),
-                                  fontFamily: 'Consolas',
-                                  fontSize: 14.0 * scale,
-                                ),
+                                style: TextStyle(color: theme.foreground.withValues(alpha: 0.5), fontFamily: 'Consolas', fontSize: 14.0 * scale),
                               ),
                               if (log.exitCode != null)
                                 TextSpan(
                                   text: ' | Exit code: ${log.exitCode}',
-                                  style: TextStyle(
-                                    color: log.exitCode == 0
-                                        ? theme.successColor
-                                        : theme.errorColor,
-                                    fontFamily: 'Consolas',
-                                    fontSize: 14.0 * scale,
-                                  ),
+                                  style: TextStyle(color: log.exitCode == 0 ? theme.successColor : theme.errorColor, fontFamily: 'Consolas', fontSize: 14.0 * scale),
                                 ),
                               TextSpan(
                                 text: '\n${'─' * 50}\n\n',
-                                style: TextStyle(
-                                  color: theme.foreground.withValues(alpha: 0.3),
-                                  fontFamily: 'Consolas',
-                                  fontSize: 14.0 * scale,
-                                ),
+                                style: TextStyle(color: theme.foreground.withValues(alpha: 0.3), fontFamily: 'Consolas', fontSize: 14.0 * scale),
                               ),
                               // Log content
                               TextSpan(
                                 text: log.lines.join('\n').replaceAll('\\\\', '\\'),
-                                style: TextStyle(
-                                  color: theme.foreground,
-                                  fontFamily: 'Consolas',
-                                  fontSize: 14.0 * scale,
-                                ),
+                                style: TextStyle(color: theme.foreground, fontFamily: 'Consolas', fontSize: 14.0 * scale),
                               ),
                             ],
                           ),
@@ -1137,11 +932,7 @@ class _LogViewState extends State<_LogView> {
                 : Center(
                     child: Text(
                       'Log not found',
-                      style: TextStyle(
-                        color: theme.foreground.withValues(alpha: 0.5),
-                        fontFamily: 'Consolas',
-                        fontSize: 14.0 * scale,
-                      ),
+                      style: TextStyle(color: theme.foreground.withValues(alpha: 0.5), fontFamily: 'Consolas', fontSize: 14.0 * scale),
                     ),
                   ),
           ),
@@ -1158,12 +949,7 @@ class _HeaderButton extends StatelessWidget {
   final String tooltip;
   final VoidCallback onTap;
 
-  const _HeaderButton({
-    required this.icon,
-    this.color,
-    required this.tooltip,
-    required this.onTap,
-  });
+  const _HeaderButton({required this.icon, this.color, required this.tooltip, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -1190,12 +976,7 @@ class _RowButton extends StatelessWidget {
   final String tooltip;
   final VoidCallback onTap;
 
-  const _RowButton({
-    required this.icon,
-    required this.color,
-    required this.tooltip,
-    required this.onTap,
-  });
+  const _RowButton({required this.icon, required this.color, required this.tooltip, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -1222,28 +1003,16 @@ class _SteppedBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.accent.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(3),
-        border: Border.all(
-          color: AppColors.accent.withValues(alpha: 0.3),
-          width: 0.5,
-        ),
+        border: Border.all(color: AppColors.accent.withValues(alpha: 0.3), width: 0.5),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.auto_mode,
-            size: 9,
-            color: AppColors.accent,
-          ),
+          Icon(Icons.auto_mode, size: 9, color: AppColors.accent),
           const SizedBox(width: 2),
           Text(
             'auto',
-            style: TextStyle(
-              fontSize: 8,
-              fontWeight: FontWeight.w600,
-              color: AppColors.accent,
-              letterSpacing: 0.3,
-            ),
+            style: TextStyle(fontSize: 8, fontWeight: FontWeight.w600, color: AppColors.accent, letterSpacing: 0.3),
           ),
         ],
       ),

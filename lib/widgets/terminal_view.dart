@@ -67,7 +67,7 @@ class _TerminalViewState extends State<TerminalView> {
   @override
   Widget build(BuildContext context) {
     final theme = core.settings.terminalTheme;
-    final scale = core.settings.textScale;
+    final scale = core.settings.terminalFontScale;
 
     return Container(
       color: theme.background,

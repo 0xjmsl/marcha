@@ -20,6 +20,9 @@ class LayoutExtension {
   bool _tasksListMinimized = false;
   bool _historyMinimized = false;
 
+  // Track which task is being hovered in history list (for pane highlight)
+  String? _hoveredTaskId;
+
   // Flex ratio management for resizable panes
   LayoutSizes _currentSizes = LayoutSizes.defaults(LayoutPreset.threeColumns);
   Map<String, LayoutSizes> _allPaneSizes = {};
@@ -52,6 +55,16 @@ class LayoutExtension {
 
   /// Check if history is visible in any slot
   bool get isHistoryVisible => _slots.any((s) => s.isHistory);
+
+  /// Get the currently hovered task ID (for pane highlight)
+  String? get hoveredTaskId => _hoveredTaskId;
+
+  /// Set the hovered task ID (triggers rebuild for pane highlight)
+  void setHoveredTaskId(String? taskId) {
+    if (_hoveredTaskId == taskId) return;
+    _hoveredTaskId = taskId;
+    _core.notify();
+  }
 
   /// Get current layout sizes
   LayoutSizes get currentSizes => _currentSizes;

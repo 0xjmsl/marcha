@@ -107,10 +107,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         _buildTerminalPreview(styles),
                         const SizedBox(height: 12),
                         _buildColorCustomization(styles, colors),
-                        if (_editingTheme != null) ...[
-                          const SizedBox(height: 12),
-                          _buildSaveBar(styles, colors),
-                        ],
+                        if (_editingTheme != null) ...[const SizedBox(height: 12), _buildSaveBar(styles, colors)],
                       ],
                     ),
 
@@ -150,7 +147,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildHeader(AppTextStyles styles, AppColorScheme colors) {
     return Container(
-      height: 36,
+      height: 36 * styles.scale,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: colors.surface,
@@ -166,12 +163,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSection({
-    required AppColorScheme colors,
-    required String title,
-    required IconData icon,
-    required List<Widget> children,
-  }) {
+  Widget _buildSection({required AppColorScheme colors, required String title, required IconData icon, required List<Widget> children}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -184,12 +176,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(width: 8),
               Text(
                 title.toUpperCase(),
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: colors.textMuted,
-                  letterSpacing: 0.8,
-                ),
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: colors.textMuted, letterSpacing: 0.8),
               ),
             ],
           ),
@@ -202,10 +189,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: colors.border),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: children,
-          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
         ),
       ],
     );
@@ -216,26 +200,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       children: [
         SizedBox(
           width: 100,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              color: colors.textSecondary,
-            ),
-          ),
+          child: Text(label, style: TextStyle(fontSize: 13, color: colors.textSecondary)),
         ),
         Expanded(child: child),
       ],
     );
   }
 
-  Widget _buildSegmentedButtons<T>({
-    required AppColorScheme colors,
-    required List<T> values,
-    required T selected,
-    required String Function(T) labelBuilder,
-    required void Function(T) onSelected,
-  }) {
+  Widget _buildSegmentedButtons<T>({required AppColorScheme colors, required List<T> values, required T selected, required String Function(T) labelBuilder, required void Function(T) onSelected}) {
     return Row(
       children: values.map((value) {
         final isSelected = value == selected;
@@ -249,22 +221,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               height: 32,
               decoration: BoxDecoration(
                 color: isSelected ? AppColors.accent : colors.surfaceLight,
-                borderRadius: BorderRadius.horizontal(
-                  left: isFirst ? const Radius.circular(4) : Radius.zero,
-                  right: isLast ? const Radius.circular(4) : Radius.zero,
-                ),
-                border: Border.all(
-                  color: isSelected ? AppColors.accent : colors.border,
-                ),
+                borderRadius: BorderRadius.horizontal(left: isFirst ? const Radius.circular(4) : Radius.zero, right: isLast ? const Radius.circular(4) : Radius.zero),
+                border: Border.all(color: isSelected ? AppColors.accent : colors.border),
               ),
               child: Center(
                 child: Text(
                   labelBuilder(value),
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                    color: isSelected ? Colors.white : colors.textSecondary,
-                  ),
+                  style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal, color: isSelected ? Colors.white : colors.textSecondary),
                 ),
               ),
             ),
@@ -288,25 +251,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       children: [
         Row(
           children: [
-            Text(
-              label,
-              style: TextStyle(fontSize: 13, color: colors.textSecondary),
-            ),
+            Text(label, style: TextStyle(fontSize: 13, color: colors.textSecondary)),
             const Spacer(),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: colors.surfaceLight,
-                borderRadius: BorderRadius.circular(4),
-              ),
+              decoration: BoxDecoration(color: colors.surfaceLight, borderRadius: BorderRadius.circular(4)),
               child: Text(
                 '$value',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontFamily: 'Consolas',
-                  fontWeight: FontWeight.bold,
-                  color: colors.textBright,
-                ),
+                style: TextStyle(fontSize: 12, fontFamily: 'Consolas', fontWeight: FontWeight.bold, color: colors.textBright),
               ),
             ),
           ],
@@ -321,18 +273,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trackHeight: 4,
             thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
           ),
-          child: Slider(
-            value: value.toDouble(),
-            min: min.toDouble(),
-            max: max.toDouble(),
-            divisions: max - min,
-            onChanged: (v) => onChanged(v.round()),
-          ),
+          child: Slider(value: value.toDouble(), min: min.toDouble(), max: max.toDouble(), divisions: max - min, onChanged: (v) => onChanged(v.round())),
         ),
-        Text(
-          sublabel,
-          style: TextStyle(fontSize: 11, color: colors.textMuted),
-        ),
+        Text(sublabel, style: TextStyle(fontSize: 11, color: colors.textMuted)),
       ],
     );
   }
@@ -345,19 +288,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Color Theme',
-          style: TextStyle(fontSize: 13, color: colors.textSecondary),
-        ),
+        Text('Color Theme', style: TextStyle(fontSize: 13, color: colors.textSecondary)),
         const SizedBox(height: 10),
         // Compact theme chips
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: [
-            ...builtInThemes.map((t) => _buildThemeChip(t, currentThemeId, canDelete: false)),
-            ...customThemes.map((t) => _buildThemeChip(t, currentThemeId, canDelete: true)),
-          ],
+          children: [...builtInThemes.map((t) => _buildThemeChip(t, currentThemeId, canDelete: false)), ...customThemes.map((t) => _buildThemeChip(t, currentThemeId, canDelete: true))],
         ),
       ],
     );
@@ -377,10 +314,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         decoration: BoxDecoration(
           color: theme.background,
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(
-            color: isSelected ? AppColors.accent : theme.borderColor,
-            width: isSelected ? 2 : 1,
-          ),
+          border: Border.all(color: isSelected ? AppColors.accent : theme.borderColor, width: isSelected ? 2 : 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -394,11 +328,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(width: 8),
             Text(
               theme.name,
-              style: TextStyle(
-                fontSize: 11,
-                color: theme.foreground,
-                fontFamily: 'Consolas',
-              ),
+              style: TextStyle(fontSize: 11, color: theme.foreground, fontFamily: 'Consolas'),
             ),
             if (canDelete) ...[
               const SizedBox(width: 6),
@@ -417,9 +347,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final theme = _currentTheme;
     final fontScale = core.settings.terminalFontScale;
     final fontSize = 11.0 * fontScale;
+    // Title bar (22) + padding (16) + 4 lines of text with 1.3 line height
+    final previewHeight = 22.0 + 16.0 + (4 * fontSize * 1.3);
 
     return Container(
-      height: 100,
+      height: previewHeight + 4,
       decoration: BoxDecoration(
         color: theme.background,
         borderRadius: BorderRadius.circular(6),
@@ -444,11 +376,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(width: 8),
                   Text(
                     'Preview',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: theme.foreground.withAlpha(150),
-                      fontFamily: 'Consolas',
-                    ),
+                    style: TextStyle(fontSize: 10, color: theme.foreground.withAlpha(150), fontFamily: 'Consolas'),
                   ),
                 ],
               ),
@@ -478,12 +406,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _previewLine(String text, Color color, double fontSize) {
     return Text(
       text,
-      style: TextStyle(
-        fontFamily: 'Consolas',
-        fontSize: fontSize,
-        color: color,
-        height: 1.3,
-      ),
+      style: TextStyle(fontFamily: 'Consolas', fontSize: fontSize, color: color, height: 1.3),
       overflow: TextOverflow.ellipsis,
     );
   }
@@ -500,16 +423,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Row(
               children: [
-                Icon(
-                  _colorsExpanded ? Icons.expand_less : Icons.expand_more,
-                  size: 16,
-                  color: colors.textMuted,
-                ),
+                Icon(_colorsExpanded ? Icons.expand_less : Icons.expand_more, size: 16, color: colors.textMuted),
                 const SizedBox(width: 6),
-                Text(
-                  'Customize Colors',
-                  style: TextStyle(fontSize: 12, color: colors.textMuted),
-                ),
+                Text('Customize Colors', style: TextStyle(fontSize: 12, color: colors.textMuted)),
               ],
             ),
           ),
@@ -550,17 +466,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           width: 70,
           child: Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: Text(
-              label,
-              style: TextStyle(fontSize: 11, color: colors.textMuted),
-            ),
+            child: Text(label, style: TextStyle(fontSize: 11, color: colors.textMuted)),
           ),
         ),
         Expanded(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: items,
-          ),
+          child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: items),
         ),
       ],
     );
@@ -581,19 +491,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(fontSize: 9, color: colors.textMuted),
-          ),
+          Text(label, style: TextStyle(fontSize: 9, color: colors.textMuted)),
         ],
       ),
     );
   }
 
   void _showColorPicker(String label, Color currentColor, AppColorScheme colors, ValueChanged<Color> onChanged) {
-    final controller = TextEditingController(
-      text: currentColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase(),
-    );
+    final controller = TextEditingController(text: currentColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase());
 
     showDialog(
       context: context,
@@ -626,11 +531,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   prefixStyle: TextStyle(color: colors.textMuted, fontSize: 13),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
-                style: TextStyle(
-                  color: colors.textPrimary,
-                  fontFamily: 'Consolas',
-                  fontSize: 13,
-                ),
+                style: TextStyle(color: colors.textPrimary, fontFamily: 'Consolas', fontSize: 13),
                 onChanged: (value) {
                   if (value.length == 6) {
                     final parsed = int.tryParse('FF$value', radix: 16);
@@ -742,26 +643,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Icon(Icons.save_outlined, size: 16, color: AppColors.accent),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(
-              'Unsaved changes',
-              style: TextStyle(fontSize: 12, color: colors.textSecondary),
-            ),
+            child: Text('Unsaved changes', style: TextStyle(fontSize: 12, color: colors.textSecondary)),
           ),
           TextButton(
             onPressed: () => setState(() => _editingTheme = null),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              minimumSize: Size.zero,
-            ),
+            style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), minimumSize: Size.zero),
             child: Text('Discard', style: TextStyle(fontSize: 12, color: colors.textMuted)),
           ),
           const SizedBox(width: 8),
           ElevatedButton(
             onPressed: _showSaveDialog,
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              minimumSize: Size.zero,
-            ),
+            style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), minimumSize: Size.zero),
             child: const Text('Save', style: TextStyle(fontSize: 12)),
           ),
         ],
@@ -823,10 +715,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: colors.surface,
         title: Text('Delete Theme', style: TextStyle(fontSize: 14, color: colors.textPrimary)),
-        content: Text(
-          'Delete "$themeName"?',
-          style: TextStyle(color: colors.textSecondary),
-        ),
+        content: Text('Delete "$themeName"?', style: TextStyle(color: colors.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),

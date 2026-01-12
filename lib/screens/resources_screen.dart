@@ -8,12 +8,13 @@ class ResourcesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColorsExtension.of(context);
+    final styles = AppTheme.of(context);
 
     return Container(
       color: colors.background,
       child: Column(
         children: [
-          _buildHeader(colors),
+          _buildHeader(colors, styles.scale),
           Expanded(
             child: Center(
               child: Column(
@@ -49,9 +50,9 @@ class ResourcesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(AppColorScheme colors) {
+  Widget _buildHeader(AppColorScheme colors, double scale) {
     return Container(
-      height: 36,
+      height: 36 * scale,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: colors.surface,
