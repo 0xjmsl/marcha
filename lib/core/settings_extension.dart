@@ -56,6 +56,9 @@ class SettingsExtension {
   /// Get terminal font scale
   double get terminalFontScale => _settings.terminalFontScale;
 
+  /// Get resources pane text scale
+  double get resourcesTextScale => _settings.resourcesTextScale;
+
   /// Update terminal theme
   Future<void> setTerminalTheme(String themeId) async {
     if (_settings.terminalThemeId == themeId) return;
@@ -68,6 +71,14 @@ class SettingsExtension {
   Future<void> setTerminalFontSizePreset(TextSizePreset preset) async {
     if (_settings.terminalFontSizePreset == preset) return;
     _settings = _settings.copyWith(terminalFontSizePreset: preset);
+    _core.notify();
+    await _save();
+  }
+
+  /// Update resources pane text size preset
+  Future<void> setResourcesTextSizePreset(TextSizePreset preset) async {
+    if (_settings.resourcesTextSizePreset == preset) return;
+    _settings = _settings.copyWith(resourcesTextSizePreset: preset);
     _core.notify();
     await _save();
   }

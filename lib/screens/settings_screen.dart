@@ -64,6 +64,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(height: 12),
                         _buildInlineOption(
                           colors: colors,
+                          label: 'Resources',
+                          child: _buildSegmentedButtons(
+                            colors: colors,
+                            values: TextSizePreset.values,
+                            selected: settings.resourcesTextSizePreset,
+                            labelBuilder: (p) => p.shortName,
+                            onSelected: (p) async {
+                              await core.settings.setResourcesTextSizePreset(p);
+                              setState(() {});
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildInlineOption(
+                          colors: colors,
                           label: 'Theme',
                           child: _buildSegmentedButtons(
                             colors: colors,

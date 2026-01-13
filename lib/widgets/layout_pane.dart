@@ -1195,13 +1195,14 @@ class _ResourcesPaneState extends State<_ResourcesPane> {
   }
 
   Widget _buildEmptyState(AppColorScheme colors) {
+    final scale = core.settings.resourcesTextScale;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             Icons.hourglass_empty,
-            size: 48,
+            size: 48 * scale,
             color: colors.textMuted,
           ),
           const SizedBox(height: 12),
@@ -1209,7 +1210,7 @@ class _ResourcesPaneState extends State<_ResourcesPane> {
             'No Running Tasks',
             style: TextStyle(
               color: colors.textSecondary,
-              fontSize: 14,
+              fontSize: 14 * scale,
             ),
           ),
           const SizedBox(height: 4),
@@ -1217,7 +1218,7 @@ class _ResourcesPaneState extends State<_ResourcesPane> {
             'Launch a task to see resources',
             style: TextStyle(
               color: colors.textMuted,
-              fontSize: 12,
+              fontSize: 12 * scale,
             ),
           ),
         ],
@@ -1226,6 +1227,7 @@ class _ResourcesPaneState extends State<_ResourcesPane> {
   }
 
   Widget _buildSummaryCards(AppColorScheme colors, List<Task> tasks) {
+    final scale = core.settings.resourcesTextScale;
     // Aggregate stats
     int totalProcesses = 0;
     double totalCpu = 0;
@@ -1254,6 +1256,7 @@ class _ResourcesPaneState extends State<_ResourcesPane> {
             value: '${tasks.length}',
             color: AppColors.success,
             colors: colors,
+            scale: scale,
           ),
           const SizedBox(width: 8),
           _ResourcesSummaryCard(
@@ -1262,6 +1265,7 @@ class _ResourcesPaneState extends State<_ResourcesPane> {
             value: '${totalCpu.toStringAsFixed(1)}%',
             color: AppColors.info,
             colors: colors,
+            scale: scale,
           ),
           const SizedBox(width: 8),
           _ResourcesSummaryCard(
@@ -1270,6 +1274,7 @@ class _ResourcesPaneState extends State<_ResourcesPane> {
             value: '${(totalMemory / 1024).toStringAsFixed(1)} MB',
             color: AppColors.warning,
             colors: colors,
+            scale: scale,
           ),
           const SizedBox(width: 8),
           _ResourcesSummaryCard(
@@ -1278,6 +1283,7 @@ class _ResourcesPaneState extends State<_ResourcesPane> {
             value: '$totalProcesses',
             color: colors.textSecondary,
             colors: colors,
+            scale: scale,
           ),
         ],
       ),
@@ -1304,8 +1310,9 @@ class _ResourcesPaneState extends State<_ResourcesPane> {
   }
 
   Widget _buildTableHeader(AppColorScheme colors) {
+    final scale = core.settings.resourcesTextScale;
     return Container(
-      height: 28,
+      height: 28 * scale,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         color: colors.surface,
@@ -1313,52 +1320,56 @@ class _ResourcesPaneState extends State<_ResourcesPane> {
       ),
       child: Row(
         children: [
-          const SizedBox(width: 20), // Expand button space
+          SizedBox(width: 20 * scale), // Expand button space
           _ResourcesSortableHeader(
             label: 'Task',
             column: 'name',
-            width: 100,
+            width: 100 * scale,
             currentSort: _sortColumn,
             ascending: _sortAscending,
             onSort: _onSort,
             colors: colors,
+            scale: scale,
           ),
           _ResourcesSortableHeader(
             label: 'PID',
             column: 'pid',
-            width: 50,
+            width: 50 * scale,
             currentSort: _sortColumn,
             ascending: _sortAscending,
             onSort: _onSort,
             colors: colors,
+            scale: scale,
           ),
           _ResourcesSortableHeader(
             label: 'CPU',
             column: 'cpu',
-            width: 60,
+            width: 60 * scale,
             currentSort: _sortColumn,
             ascending: _sortAscending,
             onSort: _onSort,
             colors: colors,
+            scale: scale,
           ),
           _ResourcesSortableHeader(
             label: 'Mem',
             column: 'memory',
-            width: 70,
+            width: 70 * scale,
             currentSort: _sortColumn,
             ascending: _sortAscending,
             onSort: _onSort,
             colors: colors,
+            scale: scale,
           ),
           const Spacer(),
           SizedBox(
-            width: 40,
+            width: 40 * scale,
             child: Text(
               'Act',
               style: AppTheme.monoSmall.copyWith(
                 color: colors.textMuted,
                 fontWeight: FontWeight.bold,
-                fontSize: 9,
+                fontSize: 9 * scale,
               ),
             ),
           ),
@@ -1368,6 +1379,7 @@ class _ResourcesPaneState extends State<_ResourcesPane> {
   }
 
   Widget _buildTableRow(AppColorScheme colors, Task task) {
+    final scale = core.settings.resourcesTextScale;
     // Get emoji from template if available
     String emoji = '';
     if (task.templateId != null) {
@@ -1380,7 +1392,7 @@ class _ResourcesPaneState extends State<_ResourcesPane> {
     final hasChildren = (stats?.children.length ?? 0) > 1;
 
     return Container(
-      height: 32,
+      height: 32 * scale,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         color: isExpanded ? colors.surfaceLight : null,
@@ -1392,14 +1404,14 @@ class _ResourcesPaneState extends State<_ResourcesPane> {
         children: [
           // Expand button
           SizedBox(
-            width: 20,
+            width: 20 * scale,
             child: hasChildren
                 ? IconButton(
                     icon: Icon(
                       isExpanded
                           ? Icons.keyboard_arrow_down
                           : Icons.keyboard_arrow_right,
-                      size: 14,
+                      size: 14 * scale,
                     ),
                     color: colors.textMuted,
                     tooltip: isExpanded ? 'Collapse' : 'Expand',
@@ -1411,26 +1423,26 @@ class _ResourcesPaneState extends State<_ResourcesPane> {
           ),
           // Task name with emoji
           SizedBox(
-            width: 100,
+            width: 100 * scale,
             child: Row(
               children: [
                 if (emoji.isNotEmpty) ...[
-                  Text(emoji, style: const TextStyle(fontSize: 12)),
-                  const SizedBox(width: 4),
+                  Text(emoji, style: TextStyle(fontSize: 12 * scale)),
+                  SizedBox(width: 4 * scale),
                 ],
                 Container(
-                  width: 6,
-                  height: 6,
+                  width: 6 * scale,
+                  height: 6 * scale,
                   decoration: BoxDecoration(
                     color: AppColors.success,
                     shape: BoxShape.circle,
                   ),
                 ),
-                const SizedBox(width: 4),
+                SizedBox(width: 4 * scale),
                 Expanded(
                   child: Text(
                     task.name,
-                    style: TextStyle(color: colors.textPrimary, fontSize: 11),
+                    style: TextStyle(color: colors.textPrimary, fontSize: 11 * scale),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -1439,34 +1451,34 @@ class _ResourcesPaneState extends State<_ResourcesPane> {
           ),
           // PID
           SizedBox(
-            width: 50,
+            width: 50 * scale,
             child: Text(
               task.pid?.toString() ?? '-',
-              style: AppTheme.monoSmall.copyWith(color: colors.textSecondary, fontSize: 10),
+              style: AppTheme.monoSmall.copyWith(color: colors.textSecondary, fontSize: 10 * scale),
             ),
           ),
           // CPU
           SizedBox(
-            width: 60,
+            width: 60 * scale,
             child: Text(
               stats?.cpuPercent ?? '-',
-              style: AppTheme.monoSmall.copyWith(color: AppColors.info, fontSize: 10),
+              style: AppTheme.monoSmall.copyWith(color: AppColors.info, fontSize: 10 * scale),
             ),
           ),
           // Memory
           SizedBox(
-            width: 70,
+            width: 70 * scale,
             child: Text(
               stats?.memoryMB ?? '-',
-              style: AppTheme.monoSmall.copyWith(color: AppColors.warning, fontSize: 10),
+              style: AppTheme.monoSmall.copyWith(color: AppColors.warning, fontSize: 10 * scale),
             ),
           ),
           const Spacer(),
           // Kill button
           SizedBox(
-            width: 40,
+            width: 40 * scale,
             child: IconButton(
-              icon: const Icon(Icons.stop_circle, size: 16),
+              icon: Icon(Icons.stop_circle, size: 16 * scale),
               color: AppColors.error,
               tooltip: 'Kill task',
               onPressed: () => _confirmKill(task),
@@ -1502,9 +1514,10 @@ class _ResourcesPaneState extends State<_ResourcesPane> {
   }
 
   Widget _buildChildRow(AppColorScheme colors, ChildProcessStats child, bool isRoot) {
+    final scale = core.settings.resourcesTextScale;
     return Container(
-      height: 24,
-      padding: const EdgeInsets.only(left: 32, right: 8),
+      height: 24 * scale,
+      padding: EdgeInsets.only(left: 32 * scale, right: 8),
       decoration: BoxDecoration(
         border: Border(
             bottom: BorderSide(color: colors.border.withValues(alpha: 0.3))),
@@ -1513,12 +1526,12 @@ class _ResourcesPaneState extends State<_ResourcesPane> {
         children: [
           // Process name
           SizedBox(
-            width: 88,
+            width: 88 * scale,
             child: Row(
               children: [
                 if (isRoot) ...[
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
+                    padding: EdgeInsets.symmetric(horizontal: 3 * scale, vertical: 1 * scale),
                     decoration: BoxDecoration(
                       color: AppColors.info.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(2),
@@ -1527,19 +1540,19 @@ class _ResourcesPaneState extends State<_ResourcesPane> {
                       'ROOT',
                       style: AppTheme.monoSmall.copyWith(
                         color: AppColors.info,
-                        fontSize: 7,
+                        fontSize: 7 * scale,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 4),
+                  SizedBox(width: 4 * scale),
                 ],
                 Expanded(
                   child: Text(
                     child.name,
                     style: AppTheme.monoSmall.copyWith(
                       color: colors.textSecondary,
-                      fontSize: 9,
+                      fontSize: 9 * scale,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1549,34 +1562,34 @@ class _ResourcesPaneState extends State<_ResourcesPane> {
           ),
           // PID
           SizedBox(
-            width: 50,
+            width: 50 * scale,
             child: Text(
               '${child.pid}',
               style: AppTheme.monoSmall.copyWith(
                 color: colors.textMuted,
-                fontSize: 9,
+                fontSize: 9 * scale,
               ),
             ),
           ),
           // CPU
           SizedBox(
-            width: 60,
+            width: 60 * scale,
             child: Text(
               child.cpuPercent,
               style: AppTheme.monoSmall.copyWith(
                 color: AppColors.info.withValues(alpha: 0.7),
-                fontSize: 9,
+                fontSize: 9 * scale,
               ),
             ),
           ),
           // Memory
           SizedBox(
-            width: 70,
+            width: 70 * scale,
             child: Text(
               child.memoryMB,
               style: AppTheme.monoSmall.copyWith(
                 color: AppColors.warning.withValues(alpha: 0.7),
-                fontSize: 9,
+                fontSize: 9 * scale,
               ),
             ),
           ),
@@ -1594,6 +1607,7 @@ class _ResourcesSummaryCard extends StatelessWidget {
   final String value;
   final Color color;
   final AppColorScheme colors;
+  final double scale;
 
   const _ResourcesSummaryCard({
     required this.icon,
@@ -1601,13 +1615,14 @@ class _ResourcesSummaryCard extends StatelessWidget {
     required this.value,
     required this.color,
     required this.colors,
+    this.scale = 1.0,
   });
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: EdgeInsets.symmetric(horizontal: 8 * scale, vertical: 4 * scale),
         decoration: BoxDecoration(
           color: colors.surface,
           borderRadius: BorderRadius.circular(4),
@@ -1616,8 +1631,8 @@ class _ResourcesSummaryCard extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 14, color: color),
-            const SizedBox(width: 6),
+            Icon(icon, size: 14 * scale, color: color),
+            SizedBox(width: 6 * scale),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1627,7 +1642,7 @@ class _ResourcesSummaryCard extends StatelessWidget {
                     label,
                     style: AppTheme.monoSmall.copyWith(
                       color: colors.textMuted,
-                      fontSize: 8,
+                      fontSize: 8 * scale,
                     ),
                   ),
                   Text(
@@ -1635,7 +1650,7 @@ class _ResourcesSummaryCard extends StatelessWidget {
                     style: TextStyle(
                       color: colors.textPrimary,
                       fontWeight: FontWeight.bold,
-                      fontSize: 11,
+                      fontSize: 11 * scale,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1658,6 +1673,7 @@ class _ResourcesSortableHeader extends StatelessWidget {
   final bool ascending;
   final ValueChanged<String> onSort;
   final AppColorScheme colors;
+  final double scale;
 
   const _ResourcesSortableHeader({
     required this.label,
@@ -1667,6 +1683,7 @@ class _ResourcesSortableHeader extends StatelessWidget {
     required this.ascending,
     required this.onSort,
     required this.colors,
+    this.scale = 1.0,
   });
 
   @override
@@ -1684,14 +1701,14 @@ class _ResourcesSortableHeader extends StatelessWidget {
               style: AppTheme.monoSmall.copyWith(
                 color: isActive ? colors.textPrimary : colors.textMuted,
                 fontWeight: FontWeight.bold,
-                fontSize: 9,
+                fontSize: 9 * scale,
               ),
             ),
             if (isActive) ...[
-              const SizedBox(width: 2),
+              SizedBox(width: 2 * scale),
               Icon(
                 ascending ? Icons.arrow_upward : Icons.arrow_downward,
-                size: 10,
+                size: 10 * scale,
                 color: colors.textPrimary,
               ),
             ],

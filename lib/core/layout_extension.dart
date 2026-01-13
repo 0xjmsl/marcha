@@ -311,7 +311,7 @@ class LayoutExtension {
     final newRatios = List<double>.from(ratios);
 
     // Minimum 20% of total (0.2 * totalFlex ensures true 20% minimum)
-    final minFlex = 0.2 * totalFlex;
+    final minFlex = 0.1 * totalFlex;
     final maxFlex = totalFlex - (minFlex * (ratios.length - 1));
 
     final newLeft = (newRatios[leftIdx] + deltaRatio).clamp(minFlex, maxFlex);

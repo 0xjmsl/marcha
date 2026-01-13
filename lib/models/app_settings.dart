@@ -37,6 +37,7 @@ enum TextSizePreset {
 class AppSettings {
   final TextSizePreset textSizePreset;
   final TextSizePreset terminalFontSizePreset;
+  final TextSizePreset resourcesTextSizePreset;
   final bool isDarkMode;
   final int maxConcurrentTasks;
   final String terminalThemeId;
@@ -50,6 +51,7 @@ class AppSettings {
   const AppSettings({
     this.textSizePreset = TextSizePreset.medium,
     this.terminalFontSizePreset = TextSizePreset.medium,
+    this.resourcesTextSizePreset = TextSizePreset.medium,
     this.isDarkMode = true,
     this.maxConcurrentTasks = 10,
     this.terminalThemeId = 'default_dark',
@@ -64,6 +66,9 @@ class AppSettings {
 
   /// Scale factor for terminal font
   double get terminalFontScale => terminalFontSizePreset.scale;
+
+  /// Scale factor for resources pane text
+  double get resourcesTextScale => resourcesTextSizePreset.scale;
 
   /// Default settings
   factory AppSettings.defaults() => const AppSettings();
@@ -97,6 +102,10 @@ class AppSettings {
         (e) => e.name == json['terminalFontSizePreset'],
         orElse: () => TextSizePreset.medium,
       ),
+      resourcesTextSizePreset: TextSizePreset.values.firstWhere(
+        (e) => e.name == json['resourcesTextSizePreset'],
+        orElse: () => TextSizePreset.medium,
+      ),
       isDarkMode: json['isDarkMode'] as bool? ?? true,
       maxConcurrentTasks: json['maxConcurrentTasks'] as int? ?? 10,
       terminalThemeId: json['terminalThemeId'] as String? ?? 'default_dark',
@@ -113,6 +122,7 @@ class AppSettings {
   Map<String, dynamic> toJson() => {
         'textSizePreset': textSizePreset.name,
         'terminalFontSizePreset': terminalFontSizePreset.name,
+        'resourcesTextSizePreset': resourcesTextSizePreset.name,
         'isDarkMode': isDarkMode,
         'maxConcurrentTasks': maxConcurrentTasks,
         'terminalThemeId': terminalThemeId,
@@ -128,6 +138,7 @@ class AppSettings {
   AppSettings copyWith({
     TextSizePreset? textSizePreset,
     TextSizePreset? terminalFontSizePreset,
+    TextSizePreset? resourcesTextSizePreset,
     bool? isDarkMode,
     int? maxConcurrentTasks,
     String? terminalThemeId,
@@ -140,6 +151,8 @@ class AppSettings {
       textSizePreset: textSizePreset ?? this.textSizePreset,
       terminalFontSizePreset:
           terminalFontSizePreset ?? this.terminalFontSizePreset,
+      resourcesTextSizePreset:
+          resourcesTextSizePreset ?? this.resourcesTextSizePreset,
       isDarkMode: isDarkMode ?? this.isDarkMode,
       maxConcurrentTasks: maxConcurrentTasks ?? this.maxConcurrentTasks,
       terminalThemeId: terminalThemeId ?? this.terminalThemeId,
@@ -157,6 +170,7 @@ class AppSettings {
           runtimeType == other.runtimeType &&
           textSizePreset == other.textSizePreset &&
           terminalFontSizePreset == other.terminalFontSizePreset &&
+          resourcesTextSizePreset == other.resourcesTextSizePreset &&
           isDarkMode == other.isDarkMode &&
           maxConcurrentTasks == other.maxConcurrentTasks &&
           terminalThemeId == other.terminalThemeId &&
@@ -171,6 +185,7 @@ class AppSettings {
   int get hashCode =>
       textSizePreset.hashCode ^
       terminalFontSizePreset.hashCode ^
+      resourcesTextSizePreset.hashCode ^
       isDarkMode.hashCode ^
       maxConcurrentTasks.hashCode ^
       terminalThemeId.hashCode ^
