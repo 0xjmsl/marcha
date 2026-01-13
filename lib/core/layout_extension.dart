@@ -16,9 +16,10 @@ class LayoutExtension {
   LayoutPreset _currentPreset = LayoutPreset.threeColumns;
   List<SlotAssignment> _slots = [];
 
-  // Track if tasksList/history are minimized (not visible in any slot)
+  // Track if tasksList/history/resources are minimized (not visible in any slot)
   bool _tasksListMinimized = false;
   bool _historyMinimized = false;
+  bool _resourcesMinimized = true; // Resources starts minimized
 
   // Track which task is being hovered in history list (for pane highlight)
   String? _hoveredTaskId;
@@ -50,11 +51,17 @@ class LayoutExtension {
   /// Check if history is minimized
   bool get isHistoryMinimized => _historyMinimized;
 
+  /// Check if resources is minimized
+  bool get isResourcesMinimized => _resourcesMinimized;
+
   /// Check if tasksList is visible in any slot
   bool get isTasksListVisible => _slots.any((s) => s.isTasksList);
 
   /// Check if history is visible in any slot
   bool get isHistoryVisible => _slots.any((s) => s.isHistory);
+
+  /// Check if resources is visible in any slot
+  bool get isResourcesVisible => _slots.any((s) => s.isResources);
 
   /// Get the currently hovered task ID (for pane highlight)
   String? get hoveredTaskId => _hoveredTaskId;
@@ -143,25 +150,30 @@ class LayoutExtension {
   void _updateMinimizedState() {
     _tasksListMinimized = !isTasksListVisible;
     _historyMinimized = !isHistoryVisible;
+    _resourcesMinimized = !isResourcesVisible;
   }
 
   /// Assign content to a slot
   void assignSlot(int slotIndex, SlotContentType type, [String? contentId]) {
     if (slotIndex < 0 || slotIndex >= _slots.length) return;
 
-    // Check if we're replacing tasksList or history (they become minimized)
+    // Check if we're replacing tasksList, history, or resources (they become minimized)
     final oldSlot = _slots[slotIndex];
     if (oldSlot.isTasksList && type != SlotContentType.tasksList) {
       _tasksListMinimized = true;
     } else if (oldSlot.isHistory && type != SlotContentType.history) {
       _historyMinimized = true;
+    } else if (oldSlot.isResources && type != SlotContentType.resources) {
+      _resourcesMinimized = true;
     }
 
-    // If assigning tasksList or history, they're no longer minimized
+    // If assigning tasksList, history, or resources, they're no longer minimized
     if (type == SlotContentType.tasksList) {
       _tasksListMinimized = false;
     } else if (type == SlotContentType.history) {
       _historyMinimized = false;
+    } else if (type == SlotContentType.resources) {
+      _resourcesMinimized = false;
     }
 
     _slots[slotIndex] = SlotAssignment(
@@ -207,6 +219,11 @@ class LayoutExtension {
   /// Maximize history to a specific slot
   void maximizeHistory(int slotIndex) {
     assignSlot(slotIndex, SlotContentType.history);
+  }
+
+  /// Maximize resources to a specific slot
+  void maximizeResources(int slotIndex) {
+    assignSlot(slotIndex, SlotContentType.resources);
   }
 
   /// Get list of empty or available slots for target selection
@@ -350,8 +367,63 @@ class LayoutExtension {
       }
     }
 
+    // Startup reorganization: terminals are orphaned (no tasks running yet)
+    _reorganizeStartupSlots();
+
     _updateMinimizedState();
     _core.notify();
+  }
+
+  /// Reorganize slots at startup: convert orphaned terminals to empty,
+  /// fill empty slots with tasksList/history, and order left-to-right top-to-bottom
+  void _reorganizeStartupSlots() {
+    // Collect existing non-terminal content
+    bool hasTasksList = _slots.any((s) => s.isTasksList);
+    bool hasHistory = _slots.any((s) => s.isHistory);
+
+    // Build new organized content list (order: tasksList, history, then empty)
+    final List<SlotContentType> organizedContent = [];
+
+    // Add tasksList if it exists, or if we have room for it
+    if (hasTasksList) {
+      organizedContent.add(SlotContentType.tasksList);
+    }
+
+    // Add history if it exists, or if we have room for it
+    if (hasHistory) {
+      organizedContent.add(SlotContentType.history);
+    }
+
+    // Count how many empty slots we'll have after converting terminals
+    int emptySlots = _currentPreset.slotCount - organizedContent.length;
+
+    // If tasksList wasn't present and we have empty slots, add it
+    if (!hasTasksList && emptySlots > 0) {
+      organizedContent.insert(0, SlotContentType.tasksList);
+      emptySlots--;
+    }
+
+    // If history wasn't present and we have empty slots, add it
+    if (!hasHistory && emptySlots > 0) {
+      // Insert after tasksList if present, otherwise at start
+      final insertIndex = organizedContent.contains(SlotContentType.tasksList) ? 1 : 0;
+      organizedContent.insert(insertIndex, SlotContentType.history);
+      emptySlots--;
+    }
+
+    // Fill remaining slots with empty
+    while (organizedContent.length < _currentPreset.slotCount) {
+      organizedContent.add(SlotContentType.empty);
+    }
+
+    // Rebuild slots array with organized content (left-to-right, top-to-bottom)
+    _slots = List.generate(
+      _currentPreset.slotCount,
+      (index) => SlotAssignment(
+        slotIndex: index,
+        contentType: organizedContent[index],
+      ),
+    );
   }
 
   /// Export current state for saving to settings

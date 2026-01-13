@@ -59,7 +59,6 @@ dependencies:
   # Terminal emulator
   xterm: ^4.0.0
   flutter_pty: ^0.4.2
-  dartssh2: ^2.9.0
 
 dev_dependencies:
   flutter_test:

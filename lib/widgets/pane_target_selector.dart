@@ -126,6 +126,7 @@ class _SlotOptionState extends State<_SlotOption> {
       SlotContentType.tasksList => 'My Tasks',
       SlotContentType.history => 'History',
       SlotContentType.terminal => _getTaskName(),
+      SlotContentType.resources => 'Resources',
     };
   }
 
@@ -147,6 +148,7 @@ class _SlotOptionState extends State<_SlotOption> {
       SlotContentType.tasksList => Icons.folder_special,
       SlotContentType.history => Icons.history,
       SlotContentType.terminal => Icons.terminal,
+      SlotContentType.resources => Icons.monitor_heart,
     };
   }
 
@@ -156,6 +158,7 @@ class _SlotOptionState extends State<_SlotOption> {
       SlotContentType.tasksList => AppColors.info,
       SlotContentType.history => AppColors.info,
       SlotContentType.terminal => AppColors.running,
+      SlotContentType.resources => AppColors.info,
     };
   }
 

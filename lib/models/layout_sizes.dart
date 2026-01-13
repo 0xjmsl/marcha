@@ -42,6 +42,49 @@ class LayoutSizes {
           nestedRatios1: [1.0, 1.0],
           nestedRatios2: [1.0, 1.0],
         ),
+      LayoutPreset.fourRows =>
+        const LayoutSizes(mainRatios: [1.0, 1.0, 1.0, 1.0]),
+      LayoutPreset.fourColumns =>
+        const LayoutSizes(mainRatios: [1.0, 1.0, 1.0, 1.0]),
+      LayoutPreset.threeLeftOneRight => const LayoutSizes(
+          mainRatios: [1.0, 1.0],
+          nestedRatios1: [1.0, 1.0, 1.0],
+        ),
+      LayoutPreset.oneLeftThreeRight => const LayoutSizes(
+          mainRatios: [1.0, 1.0],
+          nestedRatios1: [1.0, 1.0, 1.0],
+        ),
+      LayoutPreset.threeTopOneBottom => const LayoutSizes(
+          mainRatios: [1.0, 1.0],
+          nestedRatios1: [1.0, 1.0, 1.0],
+        ),
+      LayoutPreset.oneTopThreeBottom => const LayoutSizes(
+          mainRatios: [1.0, 1.0],
+          nestedRatios1: [1.0, 1.0, 1.0],
+        ),
+      LayoutPreset.twoLeftThreeRight => const LayoutSizes(
+          mainRatios: [1.0, 1.0],
+          nestedRatios1: [1.0, 1.0],
+          nestedRatios2: [1.0, 1.0, 1.0],
+        ),
+      LayoutPreset.threeLeftThreeRight => const LayoutSizes(
+          mainRatios: [1.0, 1.0],
+          nestedRatios1: [1.0, 1.0, 1.0],
+          nestedRatios2: [1.0, 1.0, 1.0],
+        ),
+      // 1 top row, then 2 left + 3 right below
+      // main: [topRow, bottomSection], nested1: [leftCol, rightCol], nested2: [left0, left1], nested3 would be needed but we reuse nested2 pattern
+      LayoutPreset.oneTopTwoLeftThreeRight => const LayoutSizes(
+          mainRatios: [1.0, 2.0],
+          nestedRatios1: [1.0, 1.0],
+          nestedRatios2: [1.0, 1.0, 1.0],
+        ),
+      // 1 top row, then 2x2 grid below
+      LayoutPreset.oneTopFourGrid => const LayoutSizes(
+          mainRatios: [1.0, 2.0],
+          nestedRatios1: [1.0, 1.0],
+          nestedRatios2: [1.0, 1.0],
+        ),
     };
   }
 

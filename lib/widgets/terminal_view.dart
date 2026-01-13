@@ -5,16 +5,19 @@ import '../core/core.dart';
 import '../models/task.dart';
 import '../theme/terminal_theme.dart';
 import '../theme/app_colors.dart';
+import 'pane_drag_overlay.dart';
 
 /// Embedded terminal view that displays a Task's terminal.
 /// Terminal state lives in the Task, this widget just renders it.
 class TerminalView extends StatefulWidget {
   final Task task;
+  final int slotIndex;
   final VoidCallback? onClose;
 
   const TerminalView({
     super.key,
     required this.task,
+    required this.slotIndex,
     this.onClose,
   });
 
@@ -115,7 +118,7 @@ class _TerminalViewState extends State<TerminalView> {
   }
 
   Widget _buildHeader(TerminalTheme theme) {
-    return Container(
+    final header = Container(
       height: 28,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
@@ -126,6 +129,9 @@ class _TerminalViewState extends State<TerminalView> {
       ),
       child: Row(
         children: [
+          // Drag handle
+          Icon(Icons.drag_indicator, size: 12, color: theme.foreground.withValues(alpha: 0.3)),
+          const SizedBox(width: 4),
           // Status indicator
           Container(
             width: 10,
@@ -201,6 +207,11 @@ class _TerminalViewState extends State<TerminalView> {
           ],
         ],
       ),
+    );
+
+    return DraggablePaneHeader(
+      slotIndex: widget.slotIndex,
+      child: header,
     );
   }
 }

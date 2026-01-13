@@ -4,6 +4,7 @@ enum SlotContentType {
   tasksList,  // My Tasks panel (templates list)
   history,    // History panel
   terminal,   // Running task terminal (or log view)
+  resources,  // Resource monitor panel
 }
 
 /// Assignment of content to a layout slot
@@ -34,6 +35,7 @@ class SlotAssignment {
   bool get isTasksList => contentType == SlotContentType.tasksList;
   bool get isHistory => contentType == SlotContentType.history;
   bool get isTerminal => contentType == SlotContentType.terminal;
+  bool get isResources => contentType == SlotContentType.resources;
 
   Map<String, dynamic> toJson() => {
         'slotIndex': slotIndex,

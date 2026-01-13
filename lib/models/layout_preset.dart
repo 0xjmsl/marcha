@@ -11,7 +11,17 @@ enum LayoutPreset {
   oneLeftTwoRight,
   twoTopOneBottom,
   oneTopTwoBottom,
-  fourGrid;
+  fourGrid,
+  fourRows,
+  fourColumns,
+  threeLeftOneRight,
+  oneLeftThreeRight,
+  threeTopOneBottom,
+  oneTopThreeBottom,
+  twoLeftThreeRight,
+  threeLeftThreeRight,
+  oneTopTwoLeftThreeRight,
+  oneTopFourGrid;
 
   String get displayName => switch (this) {
     LayoutPreset.single => '1 Pane',
@@ -24,6 +34,16 @@ enum LayoutPreset {
     LayoutPreset.twoTopOneBottom => '2 Top + 1 Bottom',
     LayoutPreset.oneTopTwoBottom => '1 Top + 2 Bottom',
     LayoutPreset.fourGrid => '2x2 Grid',
+    LayoutPreset.fourRows => '4 Rows',
+    LayoutPreset.fourColumns => '4 Columns',
+    LayoutPreset.threeLeftOneRight => '3 Left + 1 Right',
+    LayoutPreset.oneLeftThreeRight => '1 Left + 3 Right',
+    LayoutPreset.threeTopOneBottom => '3 Top + 1 Bottom',
+    LayoutPreset.oneTopThreeBottom => '1 Top + 3 Bottom',
+    LayoutPreset.twoLeftThreeRight => '2 Left + 3 Right',
+    LayoutPreset.threeLeftThreeRight => '3 Left + 3 Right',
+    LayoutPreset.oneTopTwoLeftThreeRight => '1 Top + 2L/3R',
+    LayoutPreset.oneTopFourGrid => '1 Top + 2x2',
   };
 
   int get slotCount => switch (this) {
@@ -37,6 +57,16 @@ enum LayoutPreset {
     LayoutPreset.twoTopOneBottom => 3,
     LayoutPreset.oneTopTwoBottom => 3,
     LayoutPreset.fourGrid => 4,
+    LayoutPreset.fourRows => 4,
+    LayoutPreset.fourColumns => 4,
+    LayoutPreset.threeLeftOneRight => 4,
+    LayoutPreset.oneLeftThreeRight => 4,
+    LayoutPreset.threeTopOneBottom => 4,
+    LayoutPreset.oneTopThreeBottom => 4,
+    LayoutPreset.twoLeftThreeRight => 5,
+    LayoutPreset.threeLeftThreeRight => 6,
+    LayoutPreset.oneTopTwoLeftThreeRight => 6,
+    LayoutPreset.oneTopFourGrid => 5,
   };
 
   IconData get icon => switch (this) {
@@ -50,6 +80,16 @@ enum LayoutPreset {
     LayoutPreset.twoTopOneBottom => Icons.view_stream,
     LayoutPreset.oneTopTwoBottom => Icons.view_module,
     LayoutPreset.fourGrid => Icons.grid_view,
+    LayoutPreset.fourRows => Icons.table_rows_outlined,
+    LayoutPreset.fourColumns => Icons.view_week_outlined,
+    LayoutPreset.threeLeftOneRight => Icons.vertical_split,
+    LayoutPreset.oneLeftThreeRight => Icons.vertical_split_outlined,
+    LayoutPreset.threeTopOneBottom => Icons.horizontal_split,
+    LayoutPreset.oneTopThreeBottom => Icons.horizontal_split_outlined,
+    LayoutPreset.twoLeftThreeRight => Icons.view_column_outlined,
+    LayoutPreset.threeLeftThreeRight => Icons.calendar_view_month,
+    LayoutPreset.oneTopTwoLeftThreeRight => Icons.dashboard,
+    LayoutPreset.oneTopFourGrid => Icons.dashboard_outlined,
   };
 
   static LayoutPreset fromName(String name) {

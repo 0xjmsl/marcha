@@ -7,6 +7,7 @@ import 'package:flutter_pty/flutter_pty.dart';
 import 'package:xterm/xterm.dart' as xterm;
 import 'template.dart';
 import 'task_step.dart';
+import 'process_stats.dart';
 import '../services/native_bindings.dart';
 
 enum TaskStatus {
@@ -59,6 +60,12 @@ class Task {
   String _logLineBuffer = ''; // Accumulates partial lines
   bool _logCaptureStarted = false; // Skip shell init output
 
+  // Resource monitoring state (runtime only, not serialized)
+  Timer? _monitoringTimer;
+  final List<ProcessStats> _statsHistory = [];
+  final StreamController<ProcessStats> _statsController =
+      StreamController<ProcessStats>.broadcast();
+
   int? get pid => _pid;
   int? get exitCode => _exitCode;
   bool get isRunning => _pid != null && _pty != null;
@@ -72,6 +79,13 @@ class Task {
   TaskStep? get currentStep =>
       _currentStepIndex < steps.length ? steps[_currentStepIndex] : null;
   bool get stepsCompleted => _currentStepIndex >= steps.length;
+
+  // Resource monitoring getters
+  Stream<ProcessStats> get statsStream => _statsController.stream;
+  List<ProcessStats> get statsHistory => List.unmodifiable(_statsHistory);
+  ProcessStats? get latestStats =>
+      _statsHistory.isNotEmpty ? _statsHistory.last : null;
+  bool get isMonitoring => _monitoringTimer != null;
 
   Task({
     required this.id,
@@ -223,6 +237,9 @@ class Task {
         if (hasSteps) {
           _startStepExecution();
         }
+
+        // Start resource monitoring
+        _startMonitoring();
       }
     });
   }
@@ -360,6 +377,200 @@ class Task {
     onStepProgress?.call();
   }
 
+  // === RESOURCE MONITORING ===
+
+  /// Start monitoring process resources
+  void _startMonitoring() {
+    if (_monitoringTimer != null || _pid == null) return;
+
+    _statsHistory.clear();
+
+    // Collect stats every 2 seconds
+    _monitoringTimer = Timer.periodic(const Duration(seconds: 2), (_) async {
+      if (_pid == null) {
+        _stopMonitoring();
+        return;
+      }
+
+      final stats = await _collectStats();
+      if (stats != null) {
+        _statsHistory.add(stats);
+        // Keep only last 30 entries (1 minute of data)
+        if (_statsHistory.length > 30) {
+          _statsHistory.removeAt(0);
+        }
+        _statsController.add(stats);
+      }
+    });
+
+    // Collect initial stats immediately
+    _collectStats().then((stats) {
+      if (stats != null) {
+        _statsHistory.add(stats);
+        _statsController.add(stats);
+      }
+    });
+  }
+
+  /// Stop monitoring process resources
+  void _stopMonitoring() {
+    _monitoringTimer?.cancel();
+    _monitoringTimer = null;
+  }
+
+  /// Collect current process stats (Windows-specific)
+  Future<ProcessStats?> _collectStats() async {
+    if (_pid == null) return null;
+
+    try {
+      // Get all PIDs in the process tree
+      final treePids = await _getProcessTree(_pid!);
+      if (treePids.isEmpty) return null;
+
+      // Get aggregated stats for all processes
+      return await _getAggregatedStats(_pid!, treePids);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Get all PIDs in the process tree starting from root PID
+  Future<List<int>> _getProcessTree(int rootPid) async {
+    try {
+      final result = await Process.run('powershell', [
+        '-Command',
+        'Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId | ConvertTo-Json'
+      ]);
+
+      if (result.exitCode != 0 || result.stdout.toString().isEmpty) {
+        // Fallback: just return root PID if we can verify it exists
+        final checkResult = await Process.run('powershell', [
+          '-Command',
+          'Get-Process -Id $rootPid -ErrorAction SilentlyContinue | Select-Object Id | ConvertTo-Json'
+        ]);
+        if (checkResult.exitCode == 0 &&
+            checkResult.stdout.toString().isNotEmpty) {
+          return [rootPid];
+        }
+        return [];
+      }
+
+      final dynamic jsonData = jsonDecode(result.stdout.toString());
+      final List<dynamic> processes =
+          jsonData is List ? jsonData : [jsonData];
+
+      // Build parent -> children map
+      final Map<int, List<int>> childrenMap = {};
+      final Set<int> allProcessIds = {};
+
+      for (final proc in processes) {
+        final procId = proc['ProcessId'] as int?;
+        final parentId = proc['ParentProcessId'] as int?;
+
+        if (procId != null) {
+          allProcessIds.add(procId);
+          if (parentId != null) {
+            childrenMap.putIfAbsent(parentId, () => []).add(procId);
+          }
+        }
+      }
+
+      // Check if root process exists
+      if (!allProcessIds.contains(rootPid)) {
+        return [];
+      }
+
+      // BFS to collect all descendants
+      final Set<int> treePids = {rootPid};
+      final queue = <int>[rootPid];
+
+      while (queue.isNotEmpty) {
+        final current = queue.removeAt(0);
+        final children = childrenMap[current] ?? [];
+        for (final child in children) {
+          if (!treePids.contains(child)) {
+            treePids.add(child);
+            queue.add(child);
+          }
+        }
+      }
+
+      return treePids.toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Get aggregated CPU and memory stats for a list of PIDs
+  Future<ProcessStats?> _getAggregatedStats(
+      int rootPid, List<int> pids) async {
+    if (pids.isEmpty) return null;
+
+    try {
+      final pidsString = pids.join(',');
+      final result = await Process.run('powershell', [
+        '-Command',
+        'Get-Process -Id $pidsString -ErrorAction SilentlyContinue | Select-Object Id,ProcessName,CPU,WorkingSet | ConvertTo-Json'
+      ]);
+
+      if (result.exitCode != 0 || result.stdout.toString().isEmpty) {
+        return null;
+      }
+
+      final dynamic jsonData = jsonDecode(result.stdout.toString());
+      final List<dynamic> processes =
+          jsonData is List ? jsonData : [jsonData];
+
+      double totalCpu = 0.0;
+      int totalMemory = 0;
+      int foundCount = 0;
+      final List<ChildProcessStats> children = [];
+
+      for (final proc in processes) {
+        final procId = proc['Id'] as int?;
+        final procName = proc['ProcessName'] as String? ?? 'Unknown';
+        final cpu = proc['CPU'] != null ? (proc['CPU'] as num).toDouble() : 0.0;
+        final memory = proc['WorkingSet'] != null
+            ? ((proc['WorkingSet'] as num) / 1024).round()
+            : 0;
+
+        totalCpu += cpu;
+        totalMemory += memory;
+        foundCount++;
+
+        // Add to children list (all processes including root)
+        if (procId != null) {
+          children.add(ChildProcessStats(
+            pid: procId,
+            name: procName,
+            cpuUsage: cpu,
+            memoryUsage: memory,
+          ));
+        }
+      }
+
+      if (foundCount == 0) return null;
+
+      // Sort children: root process first, then by memory usage descending
+      children.sort((a, b) {
+        if (a.pid == rootPid) return -1;
+        if (b.pid == rootPid) return 1;
+        return b.memoryUsage.compareTo(a.memoryUsage);
+      });
+
+      return ProcessStats(
+        pid: rootPid,
+        cpuUsage: totalCpu,
+        memoryUsage: totalMemory,
+        timestamp: DateTime.now(),
+        processCount: foundCount,
+        children: children,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
   /// Append text to log buffer, handling line breaks properly
   void _appendToLog(String text) {
     // Add to line buffer
@@ -414,6 +625,7 @@ class Task {
   }
 
   void _cleanup() {
+    _stopMonitoring();
     _stepTimeoutTimer?.cancel();
     _outputSubscription?.cancel();
     _outputSubscription = null;
@@ -425,6 +637,7 @@ class Task {
   /// Dispose resources
   void dispose() {
     kill();
+    _statsController.close();
   }
 
   /// Create a task from a template
