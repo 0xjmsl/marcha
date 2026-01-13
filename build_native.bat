@@ -1,8 +1,15 @@
 @echo off
 echo Building Marcha native library...
 
-:: Set up Visual Studio environment
-call "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
+:: Set up Visual Studio environment (try multiple versions)
+if exist "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" (
+    call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
+) else if exist "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat" (
+    call "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
+) else (
+    echo ERROR: Could not find Visual Studio. Please install Visual Studio with C++ tools.
+    exit /b 1
+)
 
 :: Navigate to native directory
 cd /d "%~dp0native\windows"

@@ -7,6 +7,7 @@ import 'package:flutter_pty/flutter_pty.dart';
 import 'package:xterm/xterm.dart' as xterm;
 import 'template.dart';
 import 'task_step.dart';
+import '../services/native_bindings.dart';
 
 enum TaskStatus {
   idle,
@@ -41,6 +42,7 @@ class Task {
   // Runtime process state (not serialized)
   Pty? _pty;
   int? _pid;
+  int? _jobHandle; // Windows Job Object handle for process tree management
   int? _exitCode;
   StreamSubscription<Uint8List>? _outputSubscription;
   VoidCallback? onExit;
@@ -163,6 +165,11 @@ class Task {
     );
 
     _pid = _pty!.pid;
+
+    // Create a Windows Job Object to track the process tree
+    // This ensures all child processes are terminated when we kill the task
+    _jobHandle = NativeBindings.instance.createJobForProcess(_pid!);
+
     terminal.write('\x1b[90mPID: $_pid\x1b[0m\r\n\r\n');
 
     // Forward PTY output to terminal and log buffer
@@ -392,9 +399,16 @@ class Task {
     _pty?.write(Uint8List.fromList([0x03])); // Ctrl+C
   }
 
-  /// Force kill the process
+  /// Force kill the process and all child processes
   void kill() {
     if (!isRunning) return;
+
+    // Terminate the Job Object first - this kills all child processes
+    if (_jobHandle != null && _jobHandle != 0) {
+      NativeBindings.instance.terminateJob(_jobHandle!);
+    }
+
+    // Then kill the PTY process itself
     _pty?.kill();
     _cleanup();
   }
@@ -405,6 +419,7 @@ class Task {
     _outputSubscription = null;
     _pty = null;
     _pid = null;
+    _jobHandle = null;
   }
 
   /// Dispose resources

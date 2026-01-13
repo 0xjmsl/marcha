@@ -309,6 +309,59 @@ __declspec(dllexport) int test_cmd_window() {
     return processId;
 }
 
+// Create a job object and assign a process to it
+// Returns job handle as intptr_t (0 on failure)
+__declspec(dllexport) intptr_t create_job_for_process(DWORD processId) {
+    // Create an anonymous job object
+    HANDLE hJob = CreateJobObjectA(NULL, NULL);
+    if (hJob == NULL) {
+        return 0;
+    }
+
+    // Configure the job to kill all processes when the job handle is closed
+    JOBOBJECT_EXTENDED_LIMIT_INFORMATION jobInfo = {0};
+    jobInfo.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+
+    if (!SetInformationJobObject(hJob, JobObjectExtendedLimitInformation, &jobInfo, sizeof(jobInfo))) {
+        CloseHandle(hJob);
+        return 0;
+    }
+
+    // Open a handle to the target process
+    HANDLE hProcess = OpenProcess(PROCESS_SET_QUOTA | PROCESS_TERMINATE, FALSE, processId);
+    if (hProcess == NULL) {
+        CloseHandle(hJob);
+        return 0;
+    }
+
+    // Assign the process to the job
+    BOOL assigned = AssignProcessToJobObject(hJob, hProcess);
+    CloseHandle(hProcess); // We no longer need the process handle
+
+    if (!assigned) {
+        // Process might already be in a job - this is not fatal
+        // The job object will still work for any new child processes
+        // that aren't breaking away from the job
+    }
+
+    return reinterpret_cast<intptr_t>(hJob);
+}
+
+// Terminate all processes in the job and close the handle
+__declspec(dllexport) bool terminate_job(intptr_t jobHandle) {
+    if (jobHandle == 0) {
+        return false;
+    }
+
+    HANDLE hJob = reinterpret_cast<HANDLE>(jobHandle);
+
+    // Terminate all processes in the job
+    TerminateJobObject(hJob, 1);
+
+    // Close the job handle (this also triggers KILL_ON_JOB_CLOSE)
+    return CloseHandle(hJob) != FALSE;
+}
+
 // Check if SSH is available in the system
 __declspec(dllexport) int check_ssh_available() {
     // Try to execute ssh with no arguments to see if it's available

@@ -1,0 +1,27 @@
+**********************************************************************
+** Visual Studio 2022 Developer Command Prompt v17.0
+** Copyright (c) 2025 Microsoft Corporation
+**********************************************************************
+[vcvarsall.bat] Environment initialized for: 'x64'
+startup_manager.cpp
+virtual_desktop_manager.cpp
+process_manager.cpp
+Generando c¢digo...
+Microsoft (R) Incremental Linker Version 14.44.35213.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+/dll 
+/implib:marcha_native.lib 
+/out:marcha_native.dll 
+startup_manager.obj 
+virtual_desktop_manager.obj 
+process_manager.obj 
+user32.lib 
+kernel32.lib 
+shell32.lib 
+advapi32.lib 
+ole32.lib 
+   Creando biblioteca marcha_native.lib y objeto marcha_native.exp
+Build successful!
+        0 archivo(s) copiado(s).
+        1 archivo(s) copiado(s).

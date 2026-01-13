@@ -19,6 +19,10 @@ extern "C" {
     // Debug functions
     __declspec(dllexport) int test_cmd_window();
     __declspec(dllexport) int check_ssh_available();
+
+    // Job object functions for process tree management
+    __declspec(dllexport) intptr_t create_job_for_process(DWORD processId);
+    __declspec(dllexport) bool terminate_job(intptr_t jobHandle);
 }
 
 #endif // PROCESS_MANAGER_H
