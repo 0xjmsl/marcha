@@ -66,6 +66,10 @@ class Task {
   final StreamController<ProcessStats> _statsController =
       StreamController<ProcessStats>.broadcast();
 
+  // CPU percentage calculation state (track previous sample for delta)
+  Map<int, double> _lastCpuTimes = {}; // PID -> cumulative CPU seconds
+  DateTime? _lastCpuSampleTime;
+
   int? get pid => _pid;
   int? get exitCode => _exitCode;
   bool get isRunning => _pid != null && _pty != null;
@@ -384,6 +388,8 @@ class Task {
     if (_monitoringTimer != null || _pid == null) return;
 
     _statsHistory.clear();
+    _lastCpuTimes.clear();
+    _lastCpuSampleTime = null;
 
     // Collect stats every 2 seconds
     _monitoringTimer = Timer.periodic(const Duration(seconds: 2), (_) async {
@@ -521,20 +527,40 @@ class Task {
       final List<dynamic> processes =
           jsonData is List ? jsonData : [jsonData];
 
-      double totalCpu = 0.0;
+      final now = DateTime.now();
+      final elapsedSeconds = _lastCpuSampleTime != null
+          ? now.difference(_lastCpuSampleTime!).inMilliseconds / 1000.0
+          : 0.0;
+
+      double totalCpuPercent = 0.0;
       int totalMemory = 0;
       int foundCount = 0;
       final List<ChildProcessStats> children = [];
+      final Map<int, double> currentCpuTimes = {};
 
       for (final proc in processes) {
         final procId = proc['Id'] as int?;
         final procName = proc['ProcessName'] as String? ?? 'Unknown';
-        final cpu = proc['CPU'] != null ? (proc['CPU'] as num).toDouble() : 0.0;
+        // CPU from Get-Process is cumulative CPU time in seconds
+        final cpuTimeSeconds = proc['CPU'] != null ? (proc['CPU'] as num).toDouble() : 0.0;
         final memory = proc['WorkingSet'] != null
             ? ((proc['WorkingSet'] as num) / 1024).round()
             : 0;
 
-        totalCpu += cpu;
+        // Calculate actual CPU percentage from delta
+        double cpuPercent = 0.0;
+        if (procId != null && elapsedSeconds > 0) {
+          final lastCpuTime = _lastCpuTimes[procId] ?? cpuTimeSeconds;
+          final deltaCpuTime = cpuTimeSeconds - lastCpuTime;
+          // CPU% = (delta CPU time / elapsed time) * 100
+          // Note: This can exceed 100% on multi-core systems
+          cpuPercent = (deltaCpuTime / elapsedSeconds) * 100.0;
+          // Clamp negative values (can happen if process restarted)
+          if (cpuPercent < 0) cpuPercent = 0.0;
+          currentCpuTimes[procId] = cpuTimeSeconds;
+        }
+
+        totalCpuPercent += cpuPercent;
         totalMemory += memory;
         foundCount++;
 
@@ -543,13 +569,17 @@ class Task {
           children.add(ChildProcessStats(
             pid: procId,
             name: procName,
-            cpuUsage: cpu,
+            cpuUsage: cpuPercent,
             memoryUsage: memory,
           ));
         }
       }
 
       if (foundCount == 0) return null;
+
+      // Update tracking state for next delta calculation
+      _lastCpuTimes = currentCpuTimes;
+      _lastCpuSampleTime = now;
 
       // Sort children: root process first, then by memory usage descending
       children.sort((a, b) {
@@ -560,9 +590,9 @@ class Task {
 
       return ProcessStats(
         pid: rootPid,
-        cpuUsage: totalCpu,
+        cpuUsage: totalCpuPercent,
         memoryUsage: totalMemory,
-        timestamp: DateTime.now(),
+        timestamp: now,
         processCount: foundCount,
         children: children,
       );
