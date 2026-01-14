@@ -2,6 +2,8 @@
 
 A Windows script and task management application built with Flutter. Marcha provides a flexible multi-pane interface for developers and power users to orchestrate, monitor, and manage multiple processes and terminal instances efficiently.
 
+![Marcha Screenshot](./print.png)
+
 ## Features
 
 ### Task Management
