@@ -6,6 +6,7 @@ import 'layout_extension.dart';
 import 'history_extension.dart';
 import 'settings_extension.dart';
 import 'logs_extension.dart';
+import 'resource_monitor_extension.dart';
 
 /// Core monolith - single source of truth for all app state
 class Core extends ChangeNotifier {
@@ -19,6 +20,7 @@ class Core extends ChangeNotifier {
     _history = HistoryExtension(this);
     _settings = SettingsExtension(this);
     _logs = LogsExtension(this);
+    _resourceMonitor = ResourceMonitorExtension(this);
   }
 
   late final TemplatesExtension _templates;
@@ -27,6 +29,7 @@ class Core extends ChangeNotifier {
   late final HistoryExtension _history;
   late final SettingsExtension _settings;
   late final LogsExtension _logs;
+  late final ResourceMonitorExtension _resourceMonitor;
 
   TemplatesExtension get templates => _templates;
   TasksExtension get tasks => _tasks;
@@ -34,6 +37,7 @@ class Core extends ChangeNotifier {
   HistoryExtension get history => _history;
   SettingsExtension get settings => _settings;
   LogsExtension get logs => _logs;
+  ResourceMonitorExtension get resourceMonitor => _resourceMonitor;
 
   // Data directory
   static String _dataDir = '';

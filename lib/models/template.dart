@@ -1,4 +1,5 @@
 import 'task_step.dart';
+import 'quick_action.dart';
 
 /// A template is a saved task configuration that can be launched
 class Template {
@@ -10,6 +11,7 @@ class Template {
   final String emoji;
   final String? description;
   final List<TaskStep> steps; // Automation steps (wait for pattern → send command)
+  final List<QuickAction> quickActions; // User-defined quick action commands
 
   const Template({
     required this.id,
@@ -20,6 +22,7 @@ class Template {
     this.emoji = '🚀',
     this.description,
     this.steps = const [],
+    this.quickActions = const [],
   });
 
   /// Whether this template has automation steps
@@ -54,6 +57,10 @@ class Template {
               ?.map((s) => TaskStep.fromJson(s as Map<String, dynamic>))
               .toList() ??
           [],
+      quickActions: (json['quickActions'] as List<dynamic>?)
+              ?.map((a) => QuickAction.fromJson(a as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
   }
 
@@ -66,6 +73,8 @@ class Template {
         'emoji': emoji,
         if (description != null) 'description': description,
         if (steps.isNotEmpty) 'steps': steps.map((s) => s.toJson()).toList(),
+        if (quickActions.isNotEmpty)
+          'quickActions': quickActions.map((a) => a.toJson()).toList(),
       };
 
   Template copyWith({
@@ -77,6 +86,7 @@ class Template {
     String? emoji,
     String? description,
     List<TaskStep>? steps,
+    List<QuickAction>? quickActions,
   }) {
     return Template(
       id: id ?? this.id,
@@ -87,6 +97,7 @@ class Template {
       emoji: emoji ?? this.emoji,
       description: description ?? this.description,
       steps: steps ?? this.steps,
+      quickActions: quickActions ?? this.quickActions,
     );
   }
 }

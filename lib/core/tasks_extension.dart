@@ -37,7 +37,12 @@ class TasksExtension {
     // Set up exit handler
     task.onExit = () => _onTaskExit(id);
 
+    // Clear previous stats and start
+    task.clearStats();
     task.start();
+
+    // Notify resource monitor that a task started
+    _core.resourceMonitor.onTaskStarted(task);
 
     // Add to history if we have a template
     final template = task.templateId != null
@@ -51,6 +56,10 @@ class TasksExtension {
   }
 
   void _onTaskExit(String taskId) {
+    final task = getById(taskId);
+    if (task != null) {
+      _core.resourceMonitor.onTaskStopped(task);
+    }
     _updateHistoryOnStop(taskId);
     _core.notify();
   }
@@ -70,7 +79,11 @@ class TasksExtension {
 
     // Set up exit handler and start
     task.onExit = () => _onTaskExit(task.id);
+    task.clearStats();
     task.start();
+
+    // Notify resource monitor that a task started
+    _core.resourceMonitor.onTaskStarted(task);
 
     // Add to history
     _core.history.add(template, task.id);
@@ -102,6 +115,7 @@ class TasksExtension {
     task.kill();
 
     if (wasRunning) {
+      _core.resourceMonitor.onTaskStopped(task);
       _updateHistoryOnStop(id);
     }
     _core.notify();
@@ -114,6 +128,7 @@ class TasksExtension {
 
     if (task.isRunning) {
       task.kill();
+      _core.resourceMonitor.onTaskStopped(task);
       _updateHistoryOnStop(id);
     }
     task.dispose();
