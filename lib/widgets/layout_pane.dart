@@ -129,28 +129,29 @@ class _PaneHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColorsExtension.of(context);
+    final sizes = core.settings.uiSizes;
 
     final header = Container(
-      height: 28,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      height: sizes.paneHeaderHeight,
+      padding: EdgeInsets.symmetric(horizontal: sizes.paneHeaderButtonPadding * 2),
       decoration: BoxDecoration(
         color: colors.surfaceLight,
         border: Border(bottom: BorderSide(color: colors.border)),
       ),
       child: Row(
         children: [
-          Icon(Icons.drag_indicator, size: 12, color: colors.textMuted.withValues(alpha: 0.5)),
-          const SizedBox(width: 4),
-          Icon(icon, size: 14, color: iconColor ?? colors.textMuted),
-          const SizedBox(width: 6),
+          Icon(Icons.drag_indicator, size: sizes.paneHeaderDragIconSize, color: colors.textMuted.withValues(alpha: 0.5)),
+          SizedBox(width: sizes.paneHeaderButtonPadding),
+          Icon(icon, size: sizes.paneHeaderIconSize, color: iconColor ?? colors.textMuted),
+          SizedBox(width: sizes.paneHeaderButtonPadding * 1.5),
           Expanded(
             child: Text(
               title.toUpperCase(),
-              style: AppTheme.monoSmall.copyWith(color: colors.textMuted, fontWeight: FontWeight.bold, letterSpacing: 1, fontSize: 10),
+              style: AppTheme.monoSmall.copyWith(color: colors.textMuted, fontWeight: FontWeight.bold, letterSpacing: 1, fontSize: sizes.paneHeaderTitleFontSize),
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          if (info != null) ...[Text(info!, style: AppTheme.monoSmall.copyWith(color: colors.textMuted, fontSize: 10)), const SizedBox(width: 8)],
+          if (info != null) ...[Text(info!, style: AppTheme.monoSmall.copyWith(color: colors.textMuted, fontSize: sizes.paneHeaderInfoFontSize)), SizedBox(width: sizes.paneHeaderButtonPadding * 2)],
           if (actions != null) ...actions!,
         ],
       ),
@@ -326,6 +327,7 @@ class _GroupRowState extends State<_GroupRow> {
   @override
   Widget build(BuildContext context) {
     final colors = AppColorsExtension.of(context);
+    final sizes = core.settings.uiSizes;
     final templates = widget.group.getOrderedTemplates(core.templates.all);
 
     return Column(
@@ -340,43 +342,43 @@ class _GroupRowState extends State<_GroupRow> {
               onSecondaryTapDown: (details) => _showContextMenu(details.globalPosition),
               onTap: () => setState(() => _isExpanded = !_isExpanded),
               child: Container(
-                height: 28,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+                height: sizes.groupRowHeight,
+                padding: EdgeInsets.symmetric(horizontal: sizes.groupRowHeight / 3.5),
                 decoration: BoxDecoration(
                   color: colors.surfaceLight,
                   border: Border(bottom: BorderSide(color: colors.border)),
                 ),
                 child: Row(
                   children: [
-                    Icon(_isExpanded ? Icons.expand_more : Icons.chevron_right, size: 16, color: colors.textMuted),
-                    const SizedBox(width: 4),
-                    Text(widget.group.emoji, style: const TextStyle(fontSize: 12)),
-                    const SizedBox(width: 6),
+                    Icon(_isExpanded ? Icons.expand_more : Icons.chevron_right, size: sizes.groupExpandIconSize, color: colors.textMuted),
+                    SizedBox(width: sizes.groupRowHeight / 7),
+                    Text(widget.group.emoji, style: TextStyle(fontSize: sizes.groupEmojiSize)),
+                    SizedBox(width: sizes.groupRowHeight / 4.7),
                     Expanded(
                       child: Text(
                         widget.group.name.toUpperCase(),
-                        style: AppTheme.monoSmall.copyWith(color: colors.textMuted, fontWeight: FontWeight.bold, letterSpacing: 1, fontSize: 10),
+                        style: AppTheme.monoSmall.copyWith(color: colors.textMuted, fontWeight: FontWeight.bold, letterSpacing: 1, fontSize: sizes.groupTitleFontSize),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    Text('${templates.length}', style: AppTheme.monoSmall.copyWith(color: colors.textMuted, fontSize: 10)),
+                    Text('${templates.length}', style: AppTheme.monoSmall.copyWith(color: colors.textMuted, fontSize: sizes.groupCountFontSize)),
                     if (_isHovered) ...[
-                      const SizedBox(width: 4),
+                      SizedBox(width: sizes.groupRowHeight / 7),
                       GestureDetector(
                         onTap: _runAllTasks,
                         child: Tooltip(
                           message: 'Run All',
                           child: Padding(
-                            padding: const EdgeInsets.all(2),
-                            child: Icon(Icons.play_arrow, size: 14, color: AppColors.running),
+                            padding: EdgeInsets.all(sizes.groupRowHeight / 14),
+                            child: Icon(Icons.play_arrow, size: sizes.groupActionIconSize, color: AppColors.running),
                           ),
                         ),
                       ),
                       GestureDetector(
                         onTapDown: (details) => _showContextMenu(details.globalPosition),
                         child: Padding(
-                          padding: const EdgeInsets.all(2),
-                          child: Icon(Icons.more_vert, size: 14, color: colors.textMuted),
+                          padding: EdgeInsets.all(sizes.groupRowHeight / 14),
+                          child: Icon(Icons.more_vert, size: sizes.groupActionIconSize, color: colors.textMuted),
                         ),
                       ),
                     ],
@@ -484,10 +486,11 @@ class _TemplateRowState extends State<_TemplateRow> {
 
   Widget _buildRowContent() {
     final colors = AppColorsExtension.of(context);
+    final sizes = core.settings.uiSizes;
 
     final content = Container(
-      height: 36,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      height: sizes.taskRowHeight,
+      padding: EdgeInsets.symmetric(horizontal: sizes.taskRowHeight / 4.5),
       decoration: BoxDecoration(
         color: _isHovered ? colors.surfaceLighter : Colors.transparent,
         border: Border(bottom: BorderSide(color: colors.border, width: 0.5)),
@@ -497,14 +500,14 @@ class _TemplateRowState extends State<_TemplateRow> {
           // Bullet indicator for grouped tasks
           if (widget.inGroup) ...[
             Container(
-              width: 6,
-              height: 6,
-              margin: const EdgeInsets.only(left: 4, right: 6),
+              width: sizes.taskBulletSize,
+              height: sizes.taskBulletSize,
+              margin: EdgeInsets.only(left: sizes.taskBulletSize * 0.67, right: sizes.taskBulletSize),
               decoration: BoxDecoration(color: colors.textMuted, shape: BoxShape.circle),
             ),
           ],
-          Text(widget.template.emoji, style: const TextStyle(fontSize: 14)),
-          const SizedBox(width: 8),
+          Text(widget.template.emoji, style: TextStyle(fontSize: sizes.taskEmojiSize)),
+          SizedBox(width: sizes.taskRowHeight / 4.5),
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -515,16 +518,16 @@ class _TemplateRowState extends State<_TemplateRow> {
                     Flexible(
                       child: Text(
                         widget.template.name,
-                        style: AppTheme.bodySmall.copyWith(color: colors.textPrimary),
+                        style: AppTheme.bodySmall.copyWith(color: colors.textPrimary, fontSize: sizes.taskNameFontSize),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if (widget.template.hasSteps) ...[const SizedBox(width: 6), _SteppedBadge()],
+                    if (widget.template.hasSteps) ...[SizedBox(width: sizes.taskBulletSize), _SteppedBadge()],
                   ],
                 ),
                 Text(
                   widget.template.displayCommand,
-                  style: AppTheme.monoSmall.copyWith(color: colors.textMuted, fontSize: 10),
+                  style: AppTheme.monoSmall.copyWith(color: colors.textMuted, fontSize: sizes.taskCommandFontSize),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
@@ -536,17 +539,17 @@ class _TemplateRowState extends State<_TemplateRow> {
               child: Tooltip(
                 message: 'Run',
                 child: Padding(
-                  padding: const EdgeInsets.all(2),
-                  child: Icon(Icons.play_arrow, size: 16, color: AppColors.running),
+                  padding: EdgeInsets.all(sizes.taskRowHeight / 18),
+                  child: Icon(Icons.play_arrow, size: sizes.taskActionIconSize, color: AppColors.running),
                 ),
               ),
             ),
-            const SizedBox(width: 4),
+            SizedBox(width: sizes.taskRowHeight / 9),
             GestureDetector(
               onTapDown: (details) => _showContextMenu(details.globalPosition),
               child: Padding(
-                padding: const EdgeInsets.all(2),
-                child: Icon(Icons.more_vert, size: 16, color: colors.textMuted),
+                padding: EdgeInsets.all(sizes.taskRowHeight / 18),
+                child: Icon(Icons.more_vert, size: sizes.taskActionIconSize, color: colors.textMuted),
               ),
             ),
           ],
@@ -672,6 +675,7 @@ class _HistoryRowState extends State<_HistoryRow> {
   @override
   Widget build(BuildContext context) {
     final colors = AppColorsExtension.of(context);
+    final sizes = core.settings.uiSizes;
 
     return MouseRegion(
       onEnter: (_) {
@@ -689,8 +693,8 @@ class _HistoryRowState extends State<_HistoryRow> {
         }
       },
       child: Container(
-        height: 40,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
+        height: sizes.historyRowHeight,
+        padding: EdgeInsets.symmetric(horizontal: sizes.historyRowHeight / 5),
         decoration: BoxDecoration(
           color: _isHovered ? colors.surfaceLighter : Colors.transparent,
           border: Border(bottom: BorderSide(color: colors.border, width: 0.5)),
@@ -699,12 +703,12 @@ class _HistoryRowState extends State<_HistoryRow> {
           children: [
             // Status dot
             Container(
-              width: 8,
-              height: 8,
+              width: sizes.historyStatusDotSize,
+              height: sizes.historyStatusDotSize,
               decoration: BoxDecoration(color: _statusColor(colors), shape: BoxShape.circle),
             ),
-            const SizedBox(width: 8),
-            if (widget.entry.emoji.isNotEmpty) ...[Text(widget.entry.emoji, style: const TextStyle(fontSize: 12)), const SizedBox(width: 6)],
+            SizedBox(width: sizes.historyStatusDotSize),
+            if (widget.entry.emoji.isNotEmpty) ...[Text(widget.entry.emoji, style: TextStyle(fontSize: sizes.historyEmojiSize)), SizedBox(width: sizes.historyEmojiSize / 2)],
             Expanded(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -715,21 +719,21 @@ class _HistoryRowState extends State<_HistoryRow> {
                       Flexible(
                         child: Text(
                           widget.entry.name,
-                          style: AppTheme.bodySmall.copyWith(color: colors.textPrimary),
+                          style: AppTheme.bodySmall.copyWith(color: colors.textPrimary, fontSize: sizes.historyNameFontSize),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (_hasSteps()) ...[const SizedBox(width: 6), _SteppedBadge()],
+                      if (_hasSteps()) ...[SizedBox(width: sizes.historyEmojiSize / 2), _SteppedBadge()],
                     ],
                   ),
                   Flexible(
                     child: Row(
                       children: [
-                        Text(_formatTime(widget.entry.startedAt), style: AppTheme.monoSmall.copyWith(color: colors.textMuted, fontSize: 10)),
+                        Text(_formatTime(widget.entry.startedAt), style: AppTheme.monoSmall.copyWith(color: colors.textMuted, fontSize: sizes.historyTimeFontSize)),
                         Flexible(
                           child: Text(
                             ' · ${widget.entry.durationString}',
-                            style: AppTheme.monoSmall.copyWith(color: colors.textMuted, fontSize: 10),
+                            style: AppTheme.monoSmall.copyWith(color: colors.textMuted, fontSize: sizes.historyTimeFontSize),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -747,11 +751,12 @@ class _HistoryRowState extends State<_HistoryRow> {
                   color: widget.entry.taskId != null && core.layout.findSlotByTaskId(widget.entry.taskId!) != null ? AppColors.running : AppColors.info,
                   tooltip: 'Display',
                   onTap: _displayTask,
+                  iconSize: sizes.historyActionIconSize,
                 ),
-                _RowButton(icon: Icons.stop, color: AppColors.stopped, tooltip: 'Stop', onTap: _stopTask),
+                _RowButton(icon: Icons.stop, color: AppColors.stopped, tooltip: 'Stop', onTap: _stopTask, iconSize: sizes.historyActionIconSize),
               ] else ...[
-                _RowButton(icon: Icons.description, color: AppColors.info, tooltip: 'View Log', onTap: _viewLog),
-                _RowButton(icon: Icons.delete, color: AppColors.error, tooltip: 'Delete', onTap: () => core.history.remove(widget.entry.id)),
+                _RowButton(icon: Icons.description, color: AppColors.info, tooltip: 'View Log', onTap: _viewLog, iconSize: sizes.historyActionIconSize),
+                _RowButton(icon: Icons.delete, color: AppColors.error, tooltip: 'Delete', onTap: () => core.history.remove(widget.entry.id), iconSize: sizes.historyActionIconSize),
               ],
             ],
           ],
@@ -897,7 +902,7 @@ class _LogViewState extends State<_LogView> {
   @override
   Widget build(BuildContext context) {
     final theme = core.settings.terminalTheme;
-    final scale = core.settings.textScale;
+    final sizes = core.settings.uiSizes;
 
     return Container(
       color: theme.background,
@@ -907,22 +912,22 @@ class _LogViewState extends State<_LogView> {
           DraggablePaneHeader(
             slotIndex: widget.slotIndex,
             child: Container(
-              height: 28,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              height: sizes.logHeaderHeight,
+              padding: EdgeInsets.symmetric(horizontal: sizes.logContentPadding),
               decoration: BoxDecoration(
                 color: theme.background,
                 border: Border(bottom: BorderSide(color: theme.borderColor, width: 1)),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.drag_indicator, size: 12, color: theme.foreground.withValues(alpha: 0.3)),
-                  const SizedBox(width: 4),
-                  Icon(Icons.description, size: 14, color: theme.foreground.withValues(alpha: 0.5)),
-                  const SizedBox(width: 8),
+                  Icon(Icons.drag_indicator, size: sizes.logHeaderDragIconSize, color: theme.foreground.withValues(alpha: 0.3)),
+                  SizedBox(width: sizes.logContentPadding / 2),
+                  Icon(Icons.description, size: sizes.logHeaderIconSize, color: theme.foreground.withValues(alpha: 0.5)),
+                  SizedBox(width: sizes.logContentPadding),
                   Expanded(
                     child: Text(
                       widget.entry != null ? '${widget.entry!.name} (Log)' : 'Log',
-                      style: TextStyle(color: theme.foreground.withValues(alpha: 0.7), fontSize: 12, fontFamily: 'Consolas'),
+                      style: TextStyle(color: theme.foreground.withValues(alpha: 0.7), fontSize: sizes.logHeaderTitleFontSize, fontFamily: 'Consolas'),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -933,12 +938,12 @@ class _LogViewState extends State<_LogView> {
                     onTap: _exportLog,
                     borderRadius: BorderRadius.circular(4),
                     child: Padding(
-                      padding: const EdgeInsets.all(4),
-                      child: Icon(Icons.download, size: 14, color: theme.foreground.withValues(alpha: 0.5)),
+                      padding: EdgeInsets.all(sizes.logContentPadding / 2),
+                      child: Icon(Icons.download, size: sizes.logHeaderIconSize, color: theme.foreground.withValues(alpha: 0.5)),
                     ),
                   ),
                 ),
-                const SizedBox(width: 4),
+                SizedBox(width: sizes.logContentPadding / 2),
                 // Close button
                 Tooltip(
                   message: 'Close',
@@ -946,8 +951,8 @@ class _LogViewState extends State<_LogView> {
                     onTap: () => core.layout.clearSlot(widget.slotIndex),
                     borderRadius: BorderRadius.circular(4),
                     child: Padding(
-                      padding: const EdgeInsets.all(4),
-                      child: Icon(Icons.close, size: 14, color: theme.foreground.withValues(alpha: 0.5)),
+                      padding: EdgeInsets.all(sizes.logContentPadding / 2),
+                      child: Icon(Icons.close, size: sizes.logHeaderIconSize, color: theme.foreground.withValues(alpha: 0.5)),
                     ),
                   ),
                 ),
@@ -970,47 +975,47 @@ class _LogViewState extends State<_LogView> {
                         return Center(
                           child: Text(
                             'No log data available',
-                            style: TextStyle(color: theme.foreground.withValues(alpha: 0.5), fontFamily: 'Consolas', fontSize: 14.0 * scale),
+                            style: TextStyle(color: theme.foreground.withValues(alpha: 0.5), fontFamily: 'Consolas', fontSize: sizes.logContentFontSize),
                           ),
                         );
                       }
 
                       return Padding(
-                        padding: const EdgeInsets.all(8.0),
+                        padding: EdgeInsets.all(sizes.logContentPadding),
                         child: SelectableText.rich(
                           TextSpan(
                             children: [
                               // Header info
                               TextSpan(
                                 text: '--- Log for ${log.name} ---\n',
-                                style: TextStyle(color: theme.foreground.withValues(alpha: 0.5), fontFamily: 'Consolas', fontSize: 14.0 * scale),
+                                style: TextStyle(color: theme.foreground.withValues(alpha: 0.5), fontFamily: 'Consolas', fontSize: sizes.logContentFontSize),
                               ),
                               TextSpan(
                                 text: 'Command: ${log.command} ${log.arguments.join(' ')}\n',
-                                style: TextStyle(color: theme.foreground.withValues(alpha: 0.5), fontFamily: 'Consolas', fontSize: 14.0 * scale),
+                                style: TextStyle(color: theme.foreground.withValues(alpha: 0.5), fontFamily: 'Consolas', fontSize: sizes.logContentFontSize),
                               ),
                               if (log.workingDirectory != null)
                                 TextSpan(
                                   text: 'Directory: ${log.workingDirectory!.replaceAll('\\\\', '\\')}\n',
-                                  style: TextStyle(color: theme.foreground.withValues(alpha: 0.5), fontFamily: 'Consolas', fontSize: 14.0 * scale),
+                                  style: TextStyle(color: theme.foreground.withValues(alpha: 0.5), fontFamily: 'Consolas', fontSize: sizes.logContentFontSize),
                                 ),
                               TextSpan(
                                 text: 'Duration: ${log.durationString}',
-                                style: TextStyle(color: theme.foreground.withValues(alpha: 0.5), fontFamily: 'Consolas', fontSize: 14.0 * scale),
+                                style: TextStyle(color: theme.foreground.withValues(alpha: 0.5), fontFamily: 'Consolas', fontSize: sizes.logContentFontSize),
                               ),
                               if (log.exitCode != null)
                                 TextSpan(
                                   text: ' | Exit code: ${log.exitCode}',
-                                  style: TextStyle(color: log.exitCode == 0 ? theme.successColor : theme.errorColor, fontFamily: 'Consolas', fontSize: 14.0 * scale),
+                                  style: TextStyle(color: log.exitCode == 0 ? theme.successColor : theme.errorColor, fontFamily: 'Consolas', fontSize: sizes.logContentFontSize),
                                 ),
                               TextSpan(
                                 text: '\n${'─' * 50}\n\n',
-                                style: TextStyle(color: theme.foreground.withValues(alpha: 0.3), fontFamily: 'Consolas', fontSize: 14.0 * scale),
+                                style: TextStyle(color: theme.foreground.withValues(alpha: 0.3), fontFamily: 'Consolas', fontSize: sizes.logContentFontSize),
                               ),
                               // Log content
                               TextSpan(
                                 text: log.lines.join('\n').replaceAll('\\\\', '\\'),
-                                style: TextStyle(color: theme.foreground, fontFamily: 'Consolas', fontSize: 14.0 * scale),
+                                style: TextStyle(color: theme.foreground, fontFamily: 'Consolas', fontSize: sizes.logContentFontSize),
                               ),
                             ],
                           ),
@@ -1022,7 +1027,7 @@ class _LogViewState extends State<_LogView> {
                 : Center(
                     child: Text(
                       'Log not found',
-                      style: TextStyle(color: theme.foreground.withValues(alpha: 0.5), fontFamily: 'Consolas', fontSize: 14.0 * scale),
+                      style: TextStyle(color: theme.foreground.withValues(alpha: 0.5), fontFamily: 'Consolas', fontSize: sizes.logContentFontSize),
                     ),
                   ),
           ),
@@ -1075,6 +1080,7 @@ class _HeaderButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColorsExtension.of(context);
+    final sizes = core.settings.uiSizes;
 
     return Tooltip(
       message: tooltip,
@@ -1082,8 +1088,8 @@ class _HeaderButton extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(4),
         child: Padding(
-          padding: const EdgeInsets.all(4),
-          child: Icon(icon, size: 14, color: color ?? colors.textSecondary),
+          padding: EdgeInsets.all(sizes.paneHeaderButtonPadding),
+          child: Icon(icon, size: sizes.paneHeaderButtonIconSize, color: color ?? colors.textSecondary),
         ),
       ),
     );
@@ -1096,19 +1102,21 @@ class _RowButton extends StatelessWidget {
   final Color color;
   final String tooltip;
   final VoidCallback onTap;
+  final double? iconSize;
 
-  const _RowButton({required this.icon, required this.color, required this.tooltip, required this.onTap});
+  const _RowButton({required this.icon, required this.color, required this.tooltip, required this.onTap, this.iconSize});
 
   @override
   Widget build(BuildContext context) {
+    final size = iconSize ?? 14.0;
     return Tooltip(
       message: tooltip,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(4),
         child: Padding(
-          padding: const EdgeInsets.all(4),
-          child: Icon(icon, size: 14, color: color),
+          padding: EdgeInsets.all(size / 3.5),
+          child: Icon(icon, size: size, color: color),
         ),
       ),
     );

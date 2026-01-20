@@ -29,9 +29,10 @@ class ResourcesScreen extends StatelessWidget {
   }
 
   Widget _buildHeader(AppColorScheme colors, double scale) {
+    final sizes = core.settings.uiSizes;
     return Container(
-      height: 36 * scale,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      height: sizes.toolbarHeight,
+      padding: EdgeInsets.symmetric(horizontal: sizes.toolbarHeight / 3),
       decoration: BoxDecoration(
         color: colors.surface,
         border: Border(
@@ -40,10 +41,10 @@ class ResourcesScreen extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.monitor_heart, color: colors.textMuted, size: 16),
-          const SizedBox(width: 8),
+          Icon(Icons.monitor_heart, color: colors.textMuted, size: sizes.toolbarIconSize),
+          SizedBox(width: sizes.toolbarIconSize / 2),
           Text('Resources',
-              style: AppTheme.bodyNormal.copyWith(color: colors.textPrimary)),
+              style: AppTheme.bodyNormal.copyWith(color: colors.textPrimary, fontSize: sizes.toolbarTitleFontSize)),
           const Spacer(),
         ],
       ),

@@ -55,9 +55,10 @@ class _ProcessManagerScreenState extends State<ProcessManagerScreen> {
   }
 
   Widget _buildToolbar(AppColorScheme colors, double scale) {
+    final sizes = core.settings.uiSizes;
     return Container(
-      height: 36 * scale,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      height: sizes.toolbarHeight,
+      padding: EdgeInsets.symmetric(horizontal: sizes.toolbarHeight / 3),
       decoration: BoxDecoration(
         color: colors.surface,
         border: Border(
@@ -66,9 +67,9 @@ class _ProcessManagerScreenState extends State<ProcessManagerScreen> {
       ),
       child: Row(
         children: [
-          Icon(Icons.terminal, color: colors.textMuted, size: 16),
-          const SizedBox(width: 8),
-          Text('Process Manager', style: AppTheme.bodyNormal.copyWith(color: colors.textPrimary)),
+          Icon(Icons.terminal, color: colors.textMuted, size: sizes.toolbarIconSize),
+          SizedBox(width: sizes.toolbarIconSize / 2),
+          Text('Process Manager', style: AppTheme.bodyNormal.copyWith(color: colors.textPrimary, fontSize: sizes.toolbarTitleFontSize)),
           const Spacer(),
           // Resources button
           ListenableBuilder(
@@ -81,10 +82,10 @@ class _ProcessManagerScreenState extends State<ProcessManagerScreen> {
                   onTap: _openResources,
                   borderRadius: BorderRadius.circular(4),
                   child: Padding(
-                    padding: const EdgeInsets.all(4),
+                    padding: EdgeInsets.all(sizes.toolbarIconSize / 4),
                     child: Icon(
                       Icons.monitor_heart,
-                      size: 16,
+                      size: sizes.toolbarIconSize,
                       color: isVisible ? AppColors.info : colors.textMuted,
                     ),
                   ),
@@ -92,9 +93,9 @@ class _ProcessManagerScreenState extends State<ProcessManagerScreen> {
               );
             },
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: sizes.toolbarIconSize / 2),
           const MinimizedPanesDropdown(),
-          const SizedBox(width: 8),
+          SizedBox(width: sizes.toolbarIconSize / 2),
           const LayoutDropdown(),
         ],
       ),

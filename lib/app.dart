@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:window_manager/window_manager.dart';
 import 'core/core.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_sidebar.dart';
+import 'widgets/exit_confirmation_dialog.dart';
 import 'screens/process_manager_screen.dart';
 import 'screens/resources_screen.dart';
 import 'screens/settings_screen.dart';
@@ -15,8 +17,9 @@ class MarchaApp extends StatefulWidget {
   State<MarchaApp> createState() => _MarchaAppState();
 }
 
-class _MarchaAppState extends State<MarchaApp> {
+class _MarchaAppState extends State<MarchaApp> with WindowListener {
   AppView _currentView = AppView.processManager;
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
   static const _sidebarItems = [
     SidebarItem(id: 'process', title: 'Process Manager', icon: Icons.terminal),
@@ -29,12 +32,34 @@ class _MarchaAppState extends State<MarchaApp> {
     super.initState();
     // Listen to core changes (including theme changes)
     core.addListener(_onCoreChanged);
+    // Listen to window close events
+    windowManager.addListener(this);
   }
 
   @override
   void dispose() {
+    windowManager.removeListener(this);
     core.removeListener(_onCoreChanged);
     super.dispose();
+  }
+
+  @override
+  void onWindowClose() async {
+    final navigatorContext = _navigatorKey.currentContext;
+    if (navigatorContext == null) {
+      // No context available, just close
+      await windowManager.destroy();
+      return;
+    }
+
+    final shouldExit = await ExitConfirmationDialog.show(navigatorContext);
+    if (shouldExit) {
+      // Kill all running tasks before exiting
+      for (final task in core.tasks.running) {
+        task.kill();
+      }
+      await windowManager.destroy();
+    }
   }
 
   void _onCoreChanged() {
@@ -76,6 +101,7 @@ class _MarchaAppState extends State<MarchaApp> {
     final isDarkMode = core.settings.current.isDarkMode;
 
     return MaterialApp(
+      navigatorKey: _navigatorKey,
       title: 'Marcha',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,

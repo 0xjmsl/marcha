@@ -3,6 +3,7 @@ import '../theme/terminal_theme.dart';
 import 'layout_preset.dart';
 import 'layout_sizes.dart';
 import 'slot_assignment.dart';
+import 'ui_sizes.dart';
 
 /// Text size presets for app-wide scaling
 enum TextSizePreset {
@@ -48,6 +49,9 @@ class AppSettings {
   final List<SlotAssignment> slotAssignments;
   final Map<String, LayoutSizes> paneSizes;
 
+  // UI sizes configuration
+  final UiSizes uiSizes;
+
   const AppSettings({
     this.textSizePreset = TextSizePreset.medium,
     this.terminalFontSizePreset = TextSizePreset.medium,
@@ -59,6 +63,7 @@ class AppSettings {
     this.layoutPreset = LayoutPreset.threeColumns,
     this.slotAssignments = const [],
     this.paneSizes = const {},
+    this.uiSizes = const UiSizes(),
   });
 
   /// Scale factor for app text and icons
@@ -93,6 +98,9 @@ class AppSettings {
         ) ??
         {};
 
+    final uiSizesData = json['uiSizes'] as Map<String, dynamic>?;
+    final uiSizes = uiSizesData != null ? UiSizes.fromJson(uiSizesData) : const UiSizes();
+
     return AppSettings(
       textSizePreset: TextSizePreset.values.firstWhere(
         (e) => e.name == json['textSizePreset'],
@@ -115,6 +123,7 @@ class AppSettings {
       ),
       slotAssignments: slotAssignmentsList,
       paneSizes: paneSizesMap,
+      uiSizes: uiSizes,
     );
   }
 
@@ -132,6 +141,7 @@ class AppSettings {
         'slotAssignments': slotAssignments.map((s) => s.toJson()).toList(),
         'paneSizes':
             paneSizes.map((key, value) => MapEntry(key, value.toJson())),
+        'uiSizes': uiSizes.toJson(),
       };
 
   /// Create copy with optional overrides
@@ -146,6 +156,7 @@ class AppSettings {
     LayoutPreset? layoutPreset,
     List<SlotAssignment>? slotAssignments,
     Map<String, LayoutSizes>? paneSizes,
+    UiSizes? uiSizes,
   }) {
     return AppSettings(
       textSizePreset: textSizePreset ?? this.textSizePreset,
@@ -160,6 +171,7 @@ class AppSettings {
       layoutPreset: layoutPreset ?? this.layoutPreset,
       slotAssignments: slotAssignments ?? this.slotAssignments,
       paneSizes: paneSizes ?? this.paneSizes,
+      uiSizes: uiSizes ?? this.uiSizes,
     );
   }
 
@@ -179,7 +191,8 @@ class AppSettings {
           layoutPreset == other.layoutPreset &&
           const ListEquality()
               .equals(slotAssignments, other.slotAssignments) &&
-          const MapEquality().equals(paneSizes, other.paneSizes);
+          const MapEquality().equals(paneSizes, other.paneSizes) &&
+          uiSizes == other.uiSizes;
 
   @override
   int get hashCode =>
@@ -192,5 +205,6 @@ class AppSettings {
       const ListEquality().hash(customTerminalThemes) ^
       layoutPreset.hashCode ^
       const ListEquality().hash(slotAssignments) ^
-      const MapEquality().hash(paneSizes);
+      const MapEquality().hash(paneSizes) ^
+      uiSizes.hashCode;
 }

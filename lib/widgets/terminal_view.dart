@@ -184,10 +184,11 @@ class _TerminalViewState extends State<TerminalView> {
     final template = _template;
     final quickActions = template?.quickActions ?? [];
     final hasWorkingDir = _workingDirectory != null && _workingDirectory!.isNotEmpty;
+    final sizes = core.settings.uiSizes;
 
     final header = Container(
-      height: 28,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      height: sizes.terminalHeaderHeight,
+      padding: EdgeInsets.symmetric(horizontal: sizes.terminalHeaderHeight / 3.5),
       decoration: BoxDecoration(
         color: theme.background,
         border: Border(
@@ -197,25 +198,25 @@ class _TerminalViewState extends State<TerminalView> {
       child: Row(
         children: [
           // Drag handle
-          Icon(Icons.drag_indicator, size: 12, color: theme.foreground.withValues(alpha: 0.3)),
-          const SizedBox(width: 4),
+          Icon(Icons.drag_indicator, size: sizes.terminalDragIconSize, color: theme.foreground.withValues(alpha: 0.3)),
+          SizedBox(width: sizes.terminalDragIconSize / 3),
           // Status indicator
           Container(
-            width: 10,
-            height: 10,
+            width: sizes.terminalStatusIndicatorSize,
+            height: sizes.terminalStatusIndicatorSize,
             decoration: BoxDecoration(
               color: widget.task.isRunning ? theme.runningColor : theme.stoppedColor,
               shape: BoxShape.circle,
             ),
           ),
-          const SizedBox(width: 10),
+          SizedBox(width: sizes.terminalStatusIndicatorSize),
           // Title
           Expanded(
             child: Text(
               widget.task.name,
               style: TextStyle(
                 color: theme.foreground.withValues(alpha: 0.7),
-                fontSize: 12,
+                fontSize: sizes.terminalTitleFontSize,
                 fontFamily: 'Consolas',
               ),
               overflow: TextOverflow.ellipsis,
@@ -229,10 +230,11 @@ class _TerminalViewState extends State<TerminalView> {
                 theme: theme,
                 onTap: () => _executeQuickAction(action),
                 onSecondaryTap: _manageQuickActions,
+                emojiSize: sizes.terminalQuickActionEmojiSize,
               ),
-              const SizedBox(width: 2),
+              SizedBox(width: sizes.terminalDragIconSize / 6),
             ],
-            const SizedBox(width: 4),
+            SizedBox(width: sizes.terminalDragIconSize / 3),
           ],
           // Add quick action button (only if template exists)
           if (template != null) ...[
@@ -241,8 +243,9 @@ class _TerminalViewState extends State<TerminalView> {
               tooltip: 'Add Quick Action',
               color: theme.foreground.withValues(alpha: 0.5),
               onTap: _addQuickAction,
+              iconSize: sizes.terminalActionIconSize,
             ),
-            const SizedBox(width: 4),
+            SizedBox(width: sizes.terminalDragIconSize / 3),
           ],
           // PID badge
           if (widget.task.pid != null) ...[
@@ -251,7 +254,7 @@ class _TerminalViewState extends State<TerminalView> {
               child: MouseRegion(
                 cursor: SystemMouseCursors.click,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: EdgeInsets.symmetric(horizontal: sizes.terminalPidFontSize * 0.6, vertical: sizes.terminalPidFontSize * 0.2),
                   decoration: BoxDecoration(
                     color: theme.titleBarBackground,
                     borderRadius: BorderRadius.circular(4),
@@ -260,14 +263,14 @@ class _TerminalViewState extends State<TerminalView> {
                     'PID ${widget.task.pid}',
                     style: TextStyle(
                       color: theme.foreground.withValues(alpha: 0.5),
-                      fontSize: 10,
+                      fontSize: sizes.terminalPidFontSize,
                       fontFamily: 'Consolas',
                     ),
                   ),
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: sizes.terminalHeaderHeight / 3.5),
           ],
           // Explorer button
           _HeaderIconButton(
@@ -277,8 +280,9 @@ class _TerminalViewState extends State<TerminalView> {
                 ? theme.foreground.withValues(alpha: 0.5)
                 : theme.foreground.withValues(alpha: 0.2),
             onTap: hasWorkingDir ? _openExplorer : null,
+            iconSize: sizes.terminalActionIconSize,
           ),
-          const SizedBox(width: 4),
+          SizedBox(width: sizes.terminalDragIconSize / 3),
           // Action buttons
           if (widget.task.isRunning) ...[
             _HeaderIconButton(
@@ -286,8 +290,9 @@ class _TerminalViewState extends State<TerminalView> {
               tooltip: 'Stop (Ctrl+C)',
               color: AppColors.warning,
               onTap: () => core.tasks.stop(widget.task.id),
+              iconSize: sizes.terminalActionIconSize,
             ),
-            const SizedBox(width: 4),
+            SizedBox(width: sizes.terminalDragIconSize / 3),
             _HeaderIconButton(
               icon: Icons.close,
               tooltip: 'Kill',
@@ -296,6 +301,7 @@ class _TerminalViewState extends State<TerminalView> {
                 core.tasks.kill(widget.task.id);
                 widget.onClose?.call();
               },
+              iconSize: sizes.terminalActionIconSize,
             ),
           ] else ...[
             _HeaderIconButton(
@@ -303,6 +309,7 @@ class _TerminalViewState extends State<TerminalView> {
               tooltip: 'Close',
               color: theme.foreground.withValues(alpha: 0.5),
               onTap: widget.onClose,
+              iconSize: sizes.terminalActionIconSize,
             ),
           ],
         ],
@@ -321,24 +328,27 @@ class _HeaderIconButton extends StatelessWidget {
   final String tooltip;
   final Color color;
   final VoidCallback? onTap;
+  final double? iconSize;
 
   const _HeaderIconButton({
     required this.icon,
     required this.tooltip,
     required this.color,
     this.onTap,
+    this.iconSize,
   });
 
   @override
   Widget build(BuildContext context) {
+    final size = iconSize ?? 14.0;
     return Tooltip(
       message: tooltip,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(4),
         child: Padding(
-          padding: const EdgeInsets.all(4),
-          child: Icon(icon, size: 14, color: color),
+          padding: EdgeInsets.all(size / 3.5),
+          child: Icon(icon, size: size, color: color),
         ),
       ),
     );
@@ -351,16 +361,19 @@ class _QuickActionButton extends StatelessWidget {
   final TerminalTheme theme;
   final VoidCallback onTap;
   final VoidCallback onSecondaryTap;
+  final double? emojiSize;
 
   const _QuickActionButton({
     required this.action,
     required this.theme,
     required this.onTap,
     required this.onSecondaryTap,
+    this.emojiSize,
   });
 
   @override
   Widget build(BuildContext context) {
+    final size = emojiSize ?? 12.0;
     return Tooltip(
       message: '${action.name}: ${action.command}',
       child: GestureDetector(
@@ -369,14 +382,14 @@ class _QuickActionButton extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(4),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            padding: EdgeInsets.symmetric(horizontal: size / 3, vertical: size / 6),
             decoration: BoxDecoration(
               color: theme.titleBarBackground,
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
               action.emoji,
-              style: const TextStyle(fontSize: 12),
+              style: TextStyle(fontSize: size),
             ),
           ),
         ),

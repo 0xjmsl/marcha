@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../models/app_settings.dart';
+import '../models/ui_sizes.dart';
 import '../theme/terminal_theme.dart';
 import 'core.dart';
 
@@ -58,6 +59,40 @@ class SettingsExtension {
 
   /// Get resources pane text scale
   double get resourcesTextScale => _settings.resourcesTextScale;
+
+  /// Get UI sizes configuration
+  UiSizes get uiSizes => _settings.uiSizes;
+
+  /// Update UI category scale
+  Future<void> setUiCategoryScale(String category, TextSizePreset preset) async {
+    UiSizes newUiSizes;
+    switch (category) {
+      case 'paneHeaders':
+        newUiSizes = _settings.uiSizes.copyWith(paneHeaders: preset);
+      case 'tasksPane':
+        newUiSizes = _settings.uiSizes.copyWith(tasksPane: preset);
+      case 'historyPane':
+        newUiSizes = _settings.uiSizes.copyWith(historyPane: preset);
+      case 'logView':
+        newUiSizes = _settings.uiSizes.copyWith(logView: preset);
+      case 'terminal':
+        newUiSizes = _settings.uiSizes.copyWith(terminal: preset);
+      case 'toolbar':
+        newUiSizes = _settings.uiSizes.copyWith(toolbar: preset);
+      default:
+        return;
+    }
+    _settings = _settings.copyWith(uiSizes: newUiSizes);
+    _core.notify();
+    await _save();
+  }
+
+  /// Reset UI sizes to defaults
+  Future<void> resetUiSizes() async {
+    _settings = _settings.copyWith(uiSizes: UiSizes.defaults());
+    _core.notify();
+    await _save();
+  }
 
   /// Update terminal theme
   Future<void> setTerminalTheme(String themeId) async {

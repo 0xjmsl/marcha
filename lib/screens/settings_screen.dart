@@ -96,6 +96,129 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                     const SizedBox(height: 20),
 
+                    // UI Sizes section
+                    _buildSection(
+                      colors: colors,
+                      title: 'UI Sizes',
+                      icon: Icons.aspect_ratio,
+                      children: [
+                        _buildInlineOption(
+                          colors: colors,
+                          label: 'Pane Headers',
+                          child: _buildSegmentedButtons(
+                            colors: colors,
+                            values: TextSizePreset.values,
+                            selected: settings.uiSizes.paneHeaders,
+                            labelBuilder: (p) => p.shortName,
+                            onSelected: (p) async {
+                              await core.settings.setUiCategoryScale('paneHeaders', p);
+                              setState(() {});
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildPaneHeaderPreview(colors, settings),
+                        const SizedBox(height: 16),
+                        _buildInlineOption(
+                          colors: colors,
+                          label: 'Tasks Pane',
+                          child: _buildSegmentedButtons(
+                            colors: colors,
+                            values: TextSizePreset.values,
+                            selected: settings.uiSizes.tasksPane,
+                            labelBuilder: (p) => p.shortName,
+                            onSelected: (p) async {
+                              await core.settings.setUiCategoryScale('tasksPane', p);
+                              setState(() {});
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildTaskRowPreview(colors, settings),
+                        const SizedBox(height: 16),
+                        _buildInlineOption(
+                          colors: colors,
+                          label: 'History Pane',
+                          child: _buildSegmentedButtons(
+                            colors: colors,
+                            values: TextSizePreset.values,
+                            selected: settings.uiSizes.historyPane,
+                            labelBuilder: (p) => p.shortName,
+                            onSelected: (p) async {
+                              await core.settings.setUiCategoryScale('historyPane', p);
+                              setState(() {});
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildHistoryRowPreview(colors, settings),
+                        const SizedBox(height: 16),
+                        _buildInlineOption(
+                          colors: colors,
+                          label: 'Log View',
+                          child: _buildSegmentedButtons(
+                            colors: colors,
+                            values: TextSizePreset.values,
+                            selected: settings.uiSizes.logView,
+                            labelBuilder: (p) => p.shortName,
+                            onSelected: (p) async {
+                              await core.settings.setUiCategoryScale('logView', p);
+                              setState(() {});
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildInlineOption(
+                          colors: colors,
+                          label: 'Terminal',
+                          child: _buildSegmentedButtons(
+                            colors: colors,
+                            values: TextSizePreset.values,
+                            selected: settings.uiSizes.terminal,
+                            labelBuilder: (p) => p.shortName,
+                            onSelected: (p) async {
+                              await core.settings.setUiCategoryScale('terminal', p);
+                              setState(() {});
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildTerminalHeaderPreview(colors, settings),
+                        const SizedBox(height: 16),
+                        _buildInlineOption(
+                          colors: colors,
+                          label: 'Toolbar',
+                          child: _buildSegmentedButtons(
+                            colors: colors,
+                            values: TextSizePreset.values,
+                            selected: settings.uiSizes.toolbar,
+                            labelBuilder: (p) => p.shortName,
+                            onSelected: (p) async {
+                              await core.settings.setUiCategoryScale('toolbar', p);
+                              setState(() {});
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildToolbarPreview(colors, settings),
+                        const SizedBox(height: 16),
+                        // Reset to Defaults button
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            onPressed: () async {
+                              await core.settings.resetUiSizes();
+                              setState(() {});
+                            },
+                            icon: Icon(Icons.refresh, size: 14, color: colors.textMuted),
+                            label: Text('Reset to Defaults', style: TextStyle(fontSize: 12, color: colors.textMuted)),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 20),
+
                     // Terminal section
                     _buildSection(
                       colors: colors,
@@ -757,6 +880,269 @@ class _SettingsScreenState extends State<SettingsScreen> {
       width: size,
       height: size,
       decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    );
+  }
+
+  // === UI SIZE PREVIEW WIDGETS ===
+
+  Widget _buildPaneHeaderPreview(AppColorScheme colors, AppSettings settings) {
+    final sizes = settings.uiSizes;
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: colors.border),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(5),
+        child: Container(
+          height: sizes.paneHeaderHeight,
+          padding: EdgeInsets.symmetric(horizontal: sizes.paneHeaderButtonPadding * 2),
+          decoration: BoxDecoration(
+            color: colors.surfaceLight,
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.drag_indicator, size: sizes.paneHeaderDragIconSize, color: colors.textMuted.withValues(alpha: 0.5)),
+              SizedBox(width: sizes.paneHeaderButtonPadding),
+              Icon(Icons.folder_special, size: sizes.paneHeaderIconSize, color: AppColors.info),
+              SizedBox(width: sizes.paneHeaderButtonPadding * 1.5),
+              Expanded(
+                child: Text(
+                  'MY TASKS',
+                  style: AppTheme.monoSmall.copyWith(
+                    color: colors.textMuted,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1,
+                    fontSize: sizes.paneHeaderTitleFontSize,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Text('3', style: AppTheme.monoSmall.copyWith(color: colors.textMuted, fontSize: sizes.paneHeaderInfoFontSize)),
+              SizedBox(width: sizes.paneHeaderButtonPadding * 2),
+              Icon(Icons.add, size: sizes.paneHeaderButtonIconSize, color: AppColors.info),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTaskRowPreview(AppColorScheme colors, AppSettings settings) {
+    final sizes = settings.uiSizes;
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: colors.border),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(5),
+        child: Column(
+          children: [
+            // Group row
+            Container(
+              height: sizes.groupRowHeight,
+              padding: EdgeInsets.symmetric(horizontal: sizes.groupRowHeight / 3.5),
+              decoration: BoxDecoration(
+                color: colors.surfaceLight,
+                border: Border(bottom: BorderSide(color: colors.border)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.expand_more, size: sizes.groupExpandIconSize, color: colors.textMuted),
+                  SizedBox(width: sizes.groupRowHeight / 7),
+                  Text('🚀', style: TextStyle(fontSize: sizes.groupEmojiSize)),
+                  SizedBox(width: sizes.groupRowHeight / 4.7),
+                  Expanded(
+                    child: Text(
+                      'DEVELOPMENT',
+                      style: AppTheme.monoSmall.copyWith(
+                        color: colors.textMuted,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1,
+                        fontSize: sizes.groupTitleFontSize,
+                      ),
+                    ),
+                  ),
+                  Text('2', style: AppTheme.monoSmall.copyWith(color: colors.textMuted, fontSize: sizes.groupCountFontSize)),
+                ],
+              ),
+            ),
+            // Task row
+            Container(
+              height: sizes.taskRowHeight,
+              padding: EdgeInsets.symmetric(horizontal: sizes.taskRowHeight / 4.5),
+              color: colors.background,
+              child: Row(
+                children: [
+                  Container(
+                    width: sizes.taskBulletSize,
+                    height: sizes.taskBulletSize,
+                    margin: EdgeInsets.only(left: sizes.taskBulletSize * 0.67, right: sizes.taskBulletSize),
+                    decoration: BoxDecoration(color: colors.textMuted, shape: BoxShape.circle),
+                  ),
+                  Text('🖥️', style: TextStyle(fontSize: sizes.taskEmojiSize)),
+                  SizedBox(width: sizes.taskRowHeight / 4.5),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Dev Server',
+                          style: AppTheme.bodySmall.copyWith(color: colors.textPrimary, fontSize: sizes.taskNameFontSize),
+                        ),
+                        Text(
+                          'npm run dev',
+                          style: AppTheme.monoSmall.copyWith(color: colors.textMuted, fontSize: sizes.taskCommandFontSize),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.play_arrow, size: sizes.taskActionIconSize, color: AppColors.running),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHistoryRowPreview(AppColorScheme colors, AppSettings settings) {
+    final sizes = settings.uiSizes;
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: colors.border),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(5),
+        child: Container(
+          height: sizes.historyRowHeight,
+          padding: EdgeInsets.symmetric(horizontal: sizes.historyRowHeight / 5),
+          color: colors.background,
+          child: Row(
+            children: [
+              // Status dot (running)
+              Container(
+                width: sizes.historyStatusDotSize,
+                height: sizes.historyStatusDotSize,
+                decoration: const BoxDecoration(color: AppColors.running, shape: BoxShape.circle),
+              ),
+              SizedBox(width: sizes.historyStatusDotSize),
+              Text('🖥️', style: TextStyle(fontSize: sizes.historyEmojiSize)),
+              SizedBox(width: sizes.historyEmojiSize / 2),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Dev Server',
+                      style: AppTheme.bodySmall.copyWith(color: colors.textPrimary, fontSize: sizes.historyNameFontSize),
+                    ),
+                    Text(
+                      '14:32 · 15m 23s',
+                      style: AppTheme.monoSmall.copyWith(color: colors.textMuted, fontSize: sizes.historyTimeFontSize),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.terminal, size: sizes.historyActionIconSize, color: AppColors.info),
+              SizedBox(width: sizes.historyActionIconSize / 2),
+              Icon(Icons.stop, size: sizes.historyActionIconSize, color: AppColors.stopped),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTerminalHeaderPreview(AppColorScheme colors, AppSettings settings) {
+    final sizes = settings.uiSizes;
+    final theme = core.settings.terminalTheme;
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: theme.borderColor),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(5),
+        child: Container(
+          height: sizes.terminalHeaderHeight,
+          padding: EdgeInsets.symmetric(horizontal: sizes.terminalHeaderHeight / 3.5),
+          color: theme.titleBarBackground,
+          child: Row(
+            children: [
+              Icon(Icons.drag_indicator, size: sizes.terminalDragIconSize, color: theme.foreground.withValues(alpha: 0.3)),
+              SizedBox(width: sizes.terminalHeaderHeight / 7),
+              Container(
+                width: sizes.terminalStatusIndicatorSize,
+                height: sizes.terminalStatusIndicatorSize,
+                decoration: BoxDecoration(color: theme.runningColor, shape: BoxShape.circle),
+              ),
+              SizedBox(width: sizes.terminalHeaderHeight / 4.7),
+              Expanded(
+                child: Text(
+                  'Dev Server',
+                  style: TextStyle(
+                    color: theme.foreground.withValues(alpha: 0.9),
+                    fontSize: sizes.terminalTitleFontSize,
+                    fontFamily: 'Consolas',
+                  ),
+                ),
+              ),
+              Text(
+                'PID: 12345',
+                style: TextStyle(
+                  color: theme.foreground.withValues(alpha: 0.5),
+                  fontSize: sizes.terminalPidFontSize,
+                  fontFamily: 'Consolas',
+                ),
+              ),
+              SizedBox(width: sizes.terminalHeaderHeight / 4),
+              Icon(Icons.stop, size: sizes.terminalActionIconSize, color: theme.stoppedColor),
+              SizedBox(width: sizes.terminalHeaderHeight / 7),
+              Icon(Icons.close, size: sizes.terminalActionIconSize, color: theme.foreground.withValues(alpha: 0.5)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildToolbarPreview(AppColorScheme colors, AppSettings settings) {
+    final sizes = settings.uiSizes;
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: colors.border),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(5),
+        child: Container(
+          height: sizes.toolbarHeight,
+          padding: EdgeInsets.symmetric(horizontal: sizes.toolbarHeight / 3),
+          decoration: BoxDecoration(
+            color: colors.surface,
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.terminal, color: colors.textMuted, size: sizes.toolbarIconSize),
+              SizedBox(width: sizes.toolbarIconSize / 2),
+              Text(
+                'Process Manager',
+                style: AppTheme.bodyNormal.copyWith(color: colors.textPrimary, fontSize: sizes.toolbarTitleFontSize),
+              ),
+              const Spacer(),
+              Icon(Icons.monitor_heart, size: sizes.toolbarIconSize, color: AppColors.info),
+              SizedBox(width: sizes.toolbarIconSize / 2),
+              Icon(Icons.grid_view, size: sizes.toolbarIconSize, color: colors.textMuted),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
