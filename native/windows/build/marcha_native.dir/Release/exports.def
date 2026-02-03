@@ -1,0 +1,50 @@
+EXPORTS 
+	??_R0?AVbad_alloc@std@@@8 	 DATA
+	??_R0?AVbad_array_new_length@std@@@8 	 DATA
+	??_R0?AVexception@std@@@8 	 DATA
+	??$_Allocate_manually_vector_aligned@U_Default_allocate_traits@std@@@std@@YAPEAX_K@Z
+	??$_Copy_memmove@PEAKPEAK@std@@YAPEAKPEAK00@Z
+	??$_Emplace_reallocate@AEBK@?$vector@KV?$allocator@K@std@@@std@@QEAAPEAKQEAKAEBK@Z
+	??$_Integral_to_string@DH@std@@YA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@0@H@Z
+	??$_Reallocate_grow_by@V<lambda_65e615be2a453ca0576c979606f46740>@@PEBD_K@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAAAEAV01@_KV<lambda_65e615be2a453ca0576c979606f46740>@@PEBD_K@Z
+	??$_Reallocate_grow_by@V<lambda_f3a66ab6a0570788f31503db83886f49>@@_KPEBD_K@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAAAEAV01@_KV<lambda_f3a66ab6a0570788f31503db83886f49>@@_KPEBD2@Z
+	??$_UIntegral_to_buff@DI@std@@YAPEADPEADI@Z
+	??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@U_String_constructor_concat_tag@1@AEAV01@1@Z
+	??0bad_alloc@std@@QEAA@AEBV01@@Z
+	??0bad_array_new_length@std@@QEAA@AEBV01@@Z
+	??0bad_array_new_length@std@@QEAA@XZ
+	??0exception@std@@QEAA@AEBV01@@Z
+	??1bad_array_new_length@std@@UEAA@XZ
+	??1exception@std@@UEAA@XZ
+	?_Throw_bad_array_new_length@std@@YAXXZ
+	?_Xlen_string@std@@YAXXZ
+	?_Xlength@?$vector@KV?$allocator@K@std@@@std@@CAXXZ
+	?_Xran@?$_String_val@U?$_Simple_types@D@std@@@std@@SAXXZ
+	?allocate@?$allocator@D@std@@QEAAPEAD_K@Z
+	?assign@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAAAEAV12@QEBD_K@Z
+	?deallocate@?$allocator@K@std@@QEAAXQEAK_K@Z
+	?what@exception@std@@UEBAPEBDXZ
+	EnumWindowsCallback
+	add_to_startup
+	check_ssh_available
+	create_job_for_process
+	create_virtual_desktop
+	enumerate_windows
+	execute_command
+	execute_command_with_positioning
+	execute_in_vscode_terminal
+	execute_ssh_session
+	find_cmd_window_by_title_fragment
+	get_desktop_count
+	get_desktop_names
+	is_in_startup
+	kill_process_tree
+	open_vscode
+	open_vscode_positioned
+	position_window_by_hwnd
+	remove_from_startup
+	send_text_to_window
+	set_window_pos
+	switch_to_desktop
+	terminate_job
+	test_cmd_window

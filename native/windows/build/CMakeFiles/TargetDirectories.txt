@@ -1,0 +1,3 @@
+D:/GSTPS_Proyectos/marcha/native/windows/build/CMakeFiles/marcha_native.dir
+D:/GSTPS_Proyectos/marcha/native/windows/build/CMakeFiles/ALL_BUILD.dir
+D:/GSTPS_Proyectos/marcha/native/windows/build/CMakeFiles/ZERO_CHECK.dir

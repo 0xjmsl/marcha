@@ -23,6 +23,9 @@ extern "C" {
     // Job object functions for process tree management
     __declspec(dllexport) intptr_t create_job_for_process(DWORD processId);
     __declspec(dllexport) bool terminate_job(intptr_t jobHandle);
+
+    // Process tree kill - walks the process tree and terminates all descendants
+    __declspec(dllexport) bool kill_process_tree(DWORD rootProcessId);
 }
 
 #endif // PROCESS_MANAGER_H

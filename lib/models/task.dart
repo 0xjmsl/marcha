@@ -435,12 +435,17 @@ class Task {
   void kill() {
     if (!isRunning) return;
 
-    // Terminate the Job Object first - this kills all child processes
+    // Kill the entire process tree by PID (walks all descendants)
+    if (_pid != null && _pid != 0) {
+      NativeBindings.instance.killProcessTree(_pid!);
+    }
+
+    // Also terminate the Job Object if available
     if (_jobHandle != null && _jobHandle != 0) {
       NativeBindings.instance.terminateJob(_jobHandle!);
     }
 
-    // Then kill the PTY process itself
+    // Then kill the PTY process itself as final fallback
     _pty?.kill();
     _cleanup();
   }

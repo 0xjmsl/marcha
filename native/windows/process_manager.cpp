@@ -362,6 +362,67 @@ __declspec(dllexport) bool terminate_job(intptr_t jobHandle) {
     return CloseHandle(hJob) != FALSE;
 }
 
+// Kill a process and all its descendants by walking the process tree
+__declspec(dllexport) bool kill_process_tree(DWORD rootProcessId) {
+    if (rootProcessId == 0) {
+        return false;
+    }
+
+    // Snapshot all processes
+    HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (snap == INVALID_HANDLE_VALUE) {
+        // Fallback: just kill the root process
+        HANDLE hProc = OpenProcess(PROCESS_TERMINATE, FALSE, rootProcessId);
+        if (hProc) {
+            TerminateProcess(hProc, 1);
+            CloseHandle(hProc);
+        }
+        return false;
+    }
+
+    // Collect all descendant PIDs (breadth-first)
+    std::vector<DWORD> toVisit;
+    std::vector<DWORD> allPids;
+    toVisit.push_back(rootProcessId);
+
+    while (!toVisit.empty()) {
+        DWORD parentPid = toVisit.back();
+        toVisit.pop_back();
+
+        PROCESSENTRY32 pe;
+        pe.dwSize = sizeof(pe);
+
+        if (Process32First(snap, &pe)) {
+            do {
+                if (pe.th32ParentProcessID == parentPid && pe.th32ProcessID != rootProcessId) {
+                    allPids.push_back(pe.th32ProcessID);
+                    toVisit.push_back(pe.th32ProcessID);
+                }
+            } while (Process32Next(snap, &pe));
+        }
+    }
+
+    CloseHandle(snap);
+
+    // Kill children first (deepest last in the list, kill in reverse)
+    for (int i = (int)allPids.size() - 1; i >= 0; i--) {
+        HANDLE hProc = OpenProcess(PROCESS_TERMINATE, FALSE, allPids[i]);
+        if (hProc) {
+            TerminateProcess(hProc, 1);
+            CloseHandle(hProc);
+        }
+    }
+
+    // Kill the root process last
+    HANDLE hRoot = OpenProcess(PROCESS_TERMINATE, FALSE, rootProcessId);
+    if (hRoot) {
+        TerminateProcess(hRoot, 1);
+        CloseHandle(hRoot);
+    }
+
+    return true;
+}
+
 // Check if SSH is available in the system
 __declspec(dllexport) int check_ssh_available() {
     // Try to execute ssh with no arguments to see if it's available

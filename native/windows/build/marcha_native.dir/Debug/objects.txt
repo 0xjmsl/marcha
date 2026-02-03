@@ -1,0 +1,3 @@
+D:/GSTPS_Proyectos/marcha/native/windows/build/marcha_native.dir/Debug/startup_manager.obj
+D:/GSTPS_Proyectos/marcha/native/windows/build/marcha_native.dir/Debug/virtual_desktop_manager.obj
+D:/GSTPS_Proyectos/marcha/native/windows/build/marcha_native.dir/Debug/process_manager.obj
