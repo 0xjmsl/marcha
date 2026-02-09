@@ -5,6 +5,7 @@ import '../models/task.dart';
 import '../models/process_stats.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
+import '../widgets/pane_target_selector.dart';
 
 /// Full-screen resources view (used in sidebar navigation)
 class ResourcesScreen extends StatelessWidget {
@@ -132,6 +133,12 @@ class _ResourcesContentState extends State<ResourcesContent> {
       return _sortAscending ? compare : -compare;
     });
     return sorted;
+  }
+
+  Future<void> _displayTask(Task task) async {
+    final targetSlot = await PaneTargetSelector.show(context, title: 'Select Pane', subtitle: task.name);
+    if (targetSlot == null || !mounted) return;
+    core.layout.assignTerminal(targetSlot, task.id);
   }
 
   Future<void> _confirmKill(Task task) async {
@@ -380,7 +387,7 @@ class _ResourcesContentState extends State<ResourcesContent> {
           ),
           const Spacer(),
           SizedBox(
-            width: 60 * scale,
+            width: 70 * scale,
             child: Text(
               'Actions',
               style: AppTheme.monoSmall.copyWith(
@@ -388,6 +395,7 @@ class _ResourcesContentState extends State<ResourcesContent> {
                 fontWeight: FontWeight.bold,
                 fontSize: 12 * scale,
               ),
+              textAlign: TextAlign.end,
             ),
           ),
         ],
@@ -536,16 +544,27 @@ class _ResourcesContentState extends State<ResourcesContent> {
             ),
           ),
           const Spacer(),
-          // Kill button
+          // Actions
           SizedBox(
-            width: 60 * scale,
-            child: IconButton(
-              icon: Icon(Icons.stop_circle, size: 20 * scale),
-              color: AppColors.error,
-              tooltip: 'Kill task',
-              onPressed: () => _confirmKill(task),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
+            width: 100 * scale,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                _PaneIndicatorResources(
+                  taskId: task.id,
+                  onTap: () => _displayTask(task),
+                  scale: scale,
+                ),
+                SizedBox(width: 4 * scale),
+                IconButton(
+                  icon: Icon(Icons.stop_circle, size: 18 * scale),
+                  color: AppColors.error,
+                  tooltip: 'Kill task',
+                  onPressed: () => _confirmKill(task),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
             ),
           ),
         ],
@@ -945,5 +964,56 @@ class _SparklinePainter extends CustomPainter {
   @override
   bool shouldRepaint(_SparklinePainter oldDelegate) {
     return oldDelegate.data != data || oldDelegate.color != color;
+  }
+}
+
+/// Always-visible pane indicator for running tasks in resources view
+class _PaneIndicatorResources extends StatelessWidget {
+  final String taskId;
+  final VoidCallback onTap;
+  final double scale;
+
+  const _PaneIndicatorResources({required this.taskId, required this.onTap, this.scale = 1.0});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColorsExtension.of(context);
+    final slotIndex = core.layout.findSlotByTaskId(taskId);
+    final isDisplayed = slotIndex != null;
+
+    return Tooltip(
+      message: isDisplayed ? 'Displayed on Pane ${slotIndex + 1}' : 'Display on pane',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(4),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 5 * scale, vertical: 3 * scale),
+          decoration: BoxDecoration(
+            color: isDisplayed ? AppColors.running.withValues(alpha: 0.15) : colors.surfaceLighter,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: isDisplayed ? AppColors.running.withValues(alpha: 0.4) : colors.border,
+              width: 0.5,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.terminal, size: 14 * scale, color: isDisplayed ? AppColors.running : colors.textMuted),
+              SizedBox(width: 4 * scale),
+              Text(
+                isDisplayed ? 'P${slotIndex + 1}' : '—',
+                style: TextStyle(
+                  fontSize: 10 * scale,
+                  fontWeight: FontWeight.bold,
+                  color: isDisplayed ? AppColors.running : colors.textMuted,
+                  fontFamily: 'Consolas',
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

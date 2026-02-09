@@ -743,21 +743,18 @@ class _HistoryRowState extends State<_HistoryRow> {
                 ],
               ),
             ),
-            if (_isHovered) ...[
-              if (widget.entry.isRunning) ...[
-                // Green if task is visible on a pane, blue otherwise
-                _RowButton(
-                  icon: Icons.terminal,
-                  color: widget.entry.taskId != null && core.layout.findSlotByTaskId(widget.entry.taskId!) != null ? AppColors.running : AppColors.info,
-                  tooltip: 'Display',
-                  onTap: _displayTask,
-                  iconSize: sizes.historyActionIconSize,
-                ),
+            if (widget.entry.isRunning) ...[
+              // Always-visible pane indicator for running tasks
+              _PaneIndicator(
+                taskId: widget.entry.taskId,
+                onTap: _displayTask,
+                iconSize: sizes.historyActionIconSize,
+              ),
+              if (_isHovered)
                 _RowButton(icon: Icons.stop, color: AppColors.stopped, tooltip: 'Stop', onTap: _stopTask, iconSize: sizes.historyActionIconSize),
-              ] else ...[
-                _RowButton(icon: Icons.description, color: AppColors.info, tooltip: 'View Log', onTap: _viewLog, iconSize: sizes.historyActionIconSize),
-                _RowButton(icon: Icons.delete, color: AppColors.error, tooltip: 'Delete', onTap: () => core.history.remove(widget.entry.id), iconSize: sizes.historyActionIconSize),
-              ],
+            ] else if (_isHovered) ...[
+              _RowButton(icon: Icons.description, color: AppColors.info, tooltip: 'View Log', onTap: _viewLog, iconSize: sizes.historyActionIconSize),
+              _RowButton(icon: Icons.delete, color: AppColors.error, tooltip: 'Delete', onTap: () => core.history.remove(widget.entry.id), iconSize: sizes.historyActionIconSize),
             ],
           ],
         ),
@@ -1117,6 +1114,58 @@ class _RowButton extends StatelessWidget {
         child: Padding(
           padding: EdgeInsets.all(size / 3.5),
           child: Icon(icon, size: size, color: color),
+        ),
+      ),
+    );
+  }
+}
+
+/// Always-visible pane indicator for running tasks
+/// Shows which pane (slot number) a task is displayed on, or a dim icon if not displayed
+class _PaneIndicator extends StatelessWidget {
+  final String? taskId;
+  final VoidCallback onTap;
+  final double iconSize;
+
+  const _PaneIndicator({required this.taskId, required this.onTap, required this.iconSize});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColorsExtension.of(context);
+    final slotIndex = taskId != null ? core.layout.findSlotByTaskId(taskId!) : null;
+    final isDisplayed = slotIndex != null;
+
+    return Tooltip(
+      message: isDisplayed ? 'Displayed on Pane ${slotIndex + 1}' : 'Display on pane',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(4),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: iconSize / 3, vertical: iconSize / 5),
+          decoration: BoxDecoration(
+            color: isDisplayed ? AppColors.running.withValues(alpha: 0.15) : colors.surfaceLighter,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: isDisplayed ? AppColors.running.withValues(alpha: 0.4) : colors.border,
+              width: 0.5,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.terminal, size: iconSize * 0.85, color: isDisplayed ? AppColors.running : colors.textMuted),
+              SizedBox(width: iconSize / 4),
+              Text(
+                isDisplayed ? 'P${slotIndex + 1}' : '—',
+                style: TextStyle(
+                  fontSize: iconSize * 0.7,
+                  fontWeight: FontWeight.bold,
+                  color: isDisplayed ? AppColors.running : colors.textMuted,
+                  fontFamily: 'Consolas',
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
