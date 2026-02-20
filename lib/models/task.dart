@@ -125,6 +125,25 @@ class Task {
     );
   }
 
+  /// Serialize task state to JSON
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'command': command,
+        'arguments': arguments,
+        'workingDirectory': workingDirectory,
+        'createdAt': createdAt.toIso8601String(),
+        'templateId': templateId,
+        'status': status.name,
+        'pid': pid,
+        'exitCode': exitCode,
+        'isRunning': isRunning,
+        'hasSteps': hasSteps,
+        'currentStepIndex': currentStepIndex,
+        'stepsCompleted': stepsCompleted,
+        'stepStatus': stepStatus.name,
+      };
+
   /// Strip ANSI escape codes and control characters from text
   static String _stripAnsi(String text) {
     return text

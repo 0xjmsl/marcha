@@ -60,6 +60,10 @@ dependencies:
   xterm: ^4.0.0
   flutter_pty: ^0.4.2
 
+  # EIP-191 signature verification
+  web3dart: ^2.7.3
+  http: ^1.2.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -7,8 +7,9 @@ import 'widgets/exit_confirmation_dialog.dart';
 import 'screens/process_manager_screen.dart';
 import 'screens/resources_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/api_screen.dart';
 
-enum AppView { processManager, resources, settings }
+enum AppView { processManager, resources, api, settings }
 
 class MarchaApp extends StatefulWidget {
   const MarchaApp({super.key});
@@ -24,6 +25,7 @@ class _MarchaAppState extends State<MarchaApp> with WindowListener {
   static const _sidebarItems = [
     SidebarItem(id: 'process', title: 'Process Manager', icon: Icons.terminal),
     SidebarItem(id: 'resources', title: 'Resources', icon: Icons.monitor_heart),
+    SidebarItem(id: 'api', title: 'API', icon: Icons.api),
     SidebarItem(id: 'settings', title: 'Settings', icon: Icons.settings),
   ];
 
@@ -54,6 +56,8 @@ class _MarchaAppState extends State<MarchaApp> with WindowListener {
 
     final shouldExit = await ExitConfirmationDialog.show(navigatorContext);
     if (shouldExit) {
+      // Stop API server before exiting
+      await core.api.stop();
       // Kill all running tasks before exiting
       for (final task in core.tasks.running) {
         task.kill();
@@ -78,6 +82,9 @@ class _MarchaAppState extends State<MarchaApp> with WindowListener {
         case 'resources':
           _currentView = AppView.resources;
           break;
+        case 'api':
+          _currentView = AppView.api;
+          break;
         case 'settings':
           _currentView = AppView.settings;
           break;
@@ -91,6 +98,8 @@ class _MarchaAppState extends State<MarchaApp> with WindowListener {
         return 'process';
       case AppView.resources:
         return 'resources';
+      case AppView.api:
+        return 'api';
       case AppView.settings:
         return 'settings';
     }
@@ -130,6 +139,8 @@ class _MarchaAppState extends State<MarchaApp> with WindowListener {
         return const ProcessManagerScreen();
       case AppView.resources:
         return const ResourcesScreen();
+      case AppView.api:
+        return const ApiScreen();
       case AppView.settings:
         return const SettingsScreen();
     }

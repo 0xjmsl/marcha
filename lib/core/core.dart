@@ -7,6 +7,7 @@ import 'history_extension.dart';
 import 'settings_extension.dart';
 import 'logs_extension.dart';
 import 'resource_monitor_extension.dart';
+import 'api_extension.dart';
 
 /// Core monolith - single source of truth for all app state
 class Core extends ChangeNotifier {
@@ -21,6 +22,7 @@ class Core extends ChangeNotifier {
     _settings = SettingsExtension(this);
     _logs = LogsExtension(this);
     _resourceMonitor = ResourceMonitorExtension(this);
+    _api = ApiExtension(this);
   }
 
   late final TemplatesExtension _templates;
@@ -30,6 +32,7 @@ class Core extends ChangeNotifier {
   late final SettingsExtension _settings;
   late final LogsExtension _logs;
   late final ResourceMonitorExtension _resourceMonitor;
+  late final ApiExtension _api;
 
   TemplatesExtension get templates => _templates;
   TasksExtension get tasks => _tasks;
@@ -38,6 +41,7 @@ class Core extends ChangeNotifier {
   SettingsExtension get settings => _settings;
   LogsExtension get logs => _logs;
   ResourceMonitorExtension get resourceMonitor => _resourceMonitor;
+  ApiExtension get api => _api;
 
   // Data directory
   static String _dataDir = '';
@@ -64,6 +68,11 @@ class Core extends ChangeNotifier {
     await _templates.load();
     await _history.load();
     await _logs.initialize();
+
+    // Auto-start API server if enabled
+    if (_settings.current.apiEnabled) {
+      _api.start();
+    }
 
     _initialized = true;
     notify();

@@ -197,6 +197,66 @@ class SettingsExtension {
     await _save();
   }
 
+  // === API SETTINGS ===
+
+  /// Enable or disable the API server
+  Future<void> setApiEnabled(bool enabled) async {
+    if (_settings.apiEnabled == enabled) return;
+    _settings = _settings.copyWith(apiEnabled: enabled);
+    _core.notify();
+    await _save();
+  }
+
+  /// Set the API server port
+  Future<void> setApiPort(int port) async {
+    final clamped = port.clamp(1024, 65535);
+    if (_settings.apiPort == clamped) return;
+    _settings = _settings.copyWith(apiPort: clamped);
+    _core.notify();
+    await _save();
+  }
+
+  /// Add an allowed Ethereum address
+  Future<void> addApiAllowedAddress(String address) async {
+    final normalized = address.toLowerCase();
+    if (_settings.apiAllowedAddresses.contains(normalized)) return;
+    _settings = _settings.copyWith(
+      apiAllowedAddresses: [..._settings.apiAllowedAddresses, normalized],
+    );
+    _core.notify();
+    await _save();
+  }
+
+  /// Remove an allowed Ethereum address
+  Future<void> removeApiAllowedAddress(String address) async {
+    final normalized = address.toLowerCase();
+    if (!_settings.apiAllowedAddresses.contains(normalized)) return;
+    _settings = _settings.copyWith(
+      apiAllowedAddresses:
+          _settings.apiAllowedAddresses.where((a) => a != normalized).toList(),
+    );
+    _core.notify();
+    await _save();
+  }
+
+  /// Enable or disable a specific API endpoint
+  Future<void> setApiEndpointEnabled(String endpoint, bool enabled) async {
+    final toggles = Map<String, bool>.from(_settings.apiEndpointToggles);
+    toggles[endpoint] = enabled;
+    _settings = _settings.copyWith(apiEndpointToggles: toggles);
+    _core.notify();
+    await _save();
+  }
+
+  /// Set the timestamp tolerance for API requests (in seconds)
+  Future<void> setApiTimestampTolerance(int seconds) async {
+    final clamped = seconds.clamp(30, 3600);
+    if (_settings.apiTimestampTolerance == clamped) return;
+    _settings = _settings.copyWith(apiTimestampTolerance: clamped);
+    _core.notify();
+    await _save();
+  }
+
   // === PERSISTENCE ===
 
   /// Load settings from disk

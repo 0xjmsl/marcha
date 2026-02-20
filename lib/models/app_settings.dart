@@ -52,6 +52,13 @@ class AppSettings {
   // UI sizes configuration
   final UiSizes uiSizes;
 
+  // API settings
+  final bool apiEnabled;
+  final int apiPort;
+  final List<String> apiAllowedAddresses;
+  final Map<String, bool> apiEndpointToggles;
+  final int apiTimestampTolerance;
+
   const AppSettings({
     this.textSizePreset = TextSizePreset.medium,
     this.terminalFontSizePreset = TextSizePreset.medium,
@@ -64,6 +71,11 @@ class AppSettings {
     this.slotAssignments = const [],
     this.paneSizes = const {},
     this.uiSizes = const UiSizes(),
+    this.apiEnabled = false,
+    this.apiPort = 7832,
+    this.apiAllowedAddresses = const [],
+    this.apiEndpointToggles = const {},
+    this.apiTimestampTolerance = 300,
   });
 
   /// Scale factor for app text and icons
@@ -124,6 +136,11 @@ class AppSettings {
       slotAssignments: slotAssignmentsList,
       paneSizes: paneSizesMap,
       uiSizes: uiSizes,
+      apiEnabled: json['apiEnabled'] as bool? ?? false,
+      apiPort: json['apiPort'] as int? ?? 7832,
+      apiAllowedAddresses: List<String>.from(json['apiAllowedAddresses'] ?? []),
+      apiEndpointToggles: Map<String, bool>.from(json['apiEndpointToggles'] ?? {}),
+      apiTimestampTolerance: json['apiTimestampTolerance'] as int? ?? 300,
     );
   }
 
@@ -142,6 +159,11 @@ class AppSettings {
         'paneSizes':
             paneSizes.map((key, value) => MapEntry(key, value.toJson())),
         'uiSizes': uiSizes.toJson(),
+        'apiEnabled': apiEnabled,
+        'apiPort': apiPort,
+        'apiAllowedAddresses': apiAllowedAddresses,
+        'apiEndpointToggles': apiEndpointToggles,
+        'apiTimestampTolerance': apiTimestampTolerance,
       };
 
   /// Create copy with optional overrides
@@ -157,6 +179,11 @@ class AppSettings {
     List<SlotAssignment>? slotAssignments,
     Map<String, LayoutSizes>? paneSizes,
     UiSizes? uiSizes,
+    bool? apiEnabled,
+    int? apiPort,
+    List<String>? apiAllowedAddresses,
+    Map<String, bool>? apiEndpointToggles,
+    int? apiTimestampTolerance,
   }) {
     return AppSettings(
       textSizePreset: textSizePreset ?? this.textSizePreset,
@@ -172,6 +199,11 @@ class AppSettings {
       slotAssignments: slotAssignments ?? this.slotAssignments,
       paneSizes: paneSizes ?? this.paneSizes,
       uiSizes: uiSizes ?? this.uiSizes,
+      apiEnabled: apiEnabled ?? this.apiEnabled,
+      apiPort: apiPort ?? this.apiPort,
+      apiAllowedAddresses: apiAllowedAddresses ?? this.apiAllowedAddresses,
+      apiEndpointToggles: apiEndpointToggles ?? this.apiEndpointToggles,
+      apiTimestampTolerance: apiTimestampTolerance ?? this.apiTimestampTolerance,
     );
   }
 
@@ -192,7 +224,14 @@ class AppSettings {
           const ListEquality()
               .equals(slotAssignments, other.slotAssignments) &&
           const MapEquality().equals(paneSizes, other.paneSizes) &&
-          uiSizes == other.uiSizes;
+          uiSizes == other.uiSizes &&
+          apiEnabled == other.apiEnabled &&
+          apiPort == other.apiPort &&
+          const ListEquality()
+              .equals(apiAllowedAddresses, other.apiAllowedAddresses) &&
+          const MapEquality()
+              .equals(apiEndpointToggles, other.apiEndpointToggles) &&
+          apiTimestampTolerance == other.apiTimestampTolerance;
 
   @override
   int get hashCode =>
@@ -206,5 +245,10 @@ class AppSettings {
       layoutPreset.hashCode ^
       const ListEquality().hash(slotAssignments) ^
       const MapEquality().hash(paneSizes) ^
-      uiSizes.hashCode;
+      uiSizes.hashCode ^
+      apiEnabled.hashCode ^
+      apiPort.hashCode ^
+      const ListEquality().hash(apiAllowedAddresses) ^
+      const MapEquality().hash(apiEndpointToggles) ^
+      apiTimestampTolerance.hashCode;
 }
