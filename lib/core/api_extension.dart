@@ -88,6 +88,7 @@ class ApiExtension {
     ApiEndpoint('POST', '/api/layout/assign', 'assign_layout'),
     ApiEndpoint('GET', '/api/history', 'get_history'),
     ApiEndpoint('GET', '/api/resources/:taskId', 'get_resources'),
+    ApiEndpoint('GET', '/api/debug/log', 'get_debug_log'),
   ];
 
   /// Start the HTTP server
@@ -198,9 +199,14 @@ class ApiExtension {
       await _respond(request, result.statusCode, result.body);
       _log(method, path, clientAddress, result.statusCode,
           result.statusCode >= 400 ? result.body['error'] as String? : null);
-    } catch (e) {
-      await _respond(request, 500, {'error': 'Internal server error'});
-      _log(method, path, clientAddress, 500, e.toString());
+    } catch (e, stack) {
+      final errorDetail = e.toString();
+      final stackTrace = stack.toString().split('\n').take(10).join('\n');
+      await _respond(request, 500, {
+        'error': errorDetail,
+        'stack': stackTrace,
+      });
+      _log(method, path, clientAddress, 500, errorDetail);
     }
   }
 
@@ -305,6 +311,8 @@ class ApiExtension {
         return _getHistory();
       case 'get_resources':
         return _getResources(params['taskId']!);
+      case 'get_debug_log':
+        return _getDebugLog();
       default:
         return _HandlerResult.notFound('Unknown action');
     }
@@ -456,6 +464,12 @@ class ApiExtension {
     });
   }
 
+  _HandlerResult _getDebugLog() {
+    return _HandlerResult.ok({
+      'entries': _requestLog.map((e) => e.toJson()).toList(),
+    });
+  }
+
   // === ROUTING ===
 
   _RouteMatch? _matchRoute(String method, String path) {
@@ -493,7 +507,7 @@ class ApiExtension {
 
   Future<void> _respond(HttpRequest request, int statusCode, Map<String, dynamic> body) async {
     request.response.statusCode = statusCode;
-    request.response.write(jsonEncode(body));
+    request.response.add(utf8.encode(jsonEncode(body)));
     await request.response.close();
   }
 
