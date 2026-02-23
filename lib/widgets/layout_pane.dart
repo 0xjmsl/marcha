@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../core/core.dart';
 import '../core/templates_extension.dart';
+import '../models/layout_node.dart';
 import '../models/slot_assignment.dart';
 import '../models/template.dart';
 import '../models/task_group.dart';
@@ -19,8 +20,9 @@ import 'terminal_view.dart';
 /// Generic pane that renders based on SlotContentType
 class LayoutPane extends StatefulWidget {
   final int slotIndex;
+  final String? nodeId;
 
-  const LayoutPane({super.key, required this.slotIndex});
+  const LayoutPane({super.key, required this.slotIndex, this.nodeId});
 
   @override
   State<LayoutPane> createState() => _LayoutPaneState();
@@ -68,6 +70,8 @@ class _LayoutPaneState extends State<LayoutPane> {
         final offset = _dragController.getAnimatedOffset(widget.slotIndex);
         final isAnimating = offset != Offset.zero;
 
+        final isManagementMode = core.layout.isPaneManagementMode;
+
         final paneContent = Container(
           key: _paneKey,
           decoration: BoxDecoration(
@@ -94,14 +98,23 @@ class _LayoutPaneState extends State<LayoutPane> {
           },
         );
 
-        // Apply offset directly - animation happens via controller updates during drag
+        Widget result;
+        if (isManagementMode && widget.nodeId != null) {
+          result = _PaneManagementOverlay(
+            nodeId: widget.nodeId!,
+            child: paneContent,
+          );
+        } else {
+          result = paneContent;
+        }
+
         if (offset == Offset.zero) {
-          return paneContent;
+          return result;
         }
 
         return Transform.translate(
           offset: offset,
-          child: paneContent,
+          child: result,
         );
       },
     );
@@ -1165,6 +1178,105 @@ class _PaneIndicator extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Overlay shown in pane management mode with split/close action buttons
+class _PaneManagementOverlay extends StatefulWidget {
+  final String nodeId;
+  final Widget child;
+
+  const _PaneManagementOverlay({required this.nodeId, required this.child});
+
+  @override
+  State<_PaneManagementOverlay> createState() => _PaneManagementOverlayState();
+}
+
+class _PaneManagementOverlayState extends State<_PaneManagementOverlay> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: Stack(
+        children: [
+          widget.child,
+          // Subtle border to indicate management mode
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: AppColors.accent.withValues(alpha: _isHovered ? 0.5 : 0.2),
+                    width: 1,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Action buttons on hover
+          if (_isHovered)
+            Positioned(
+              top: 4,
+              right: 4,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _ManagementButton(
+                    icon: Icons.vertical_split,
+                    tooltip: 'Split Right',
+                    onTap: () => core.layout.splitNode(widget.nodeId, SplitDirection.row),
+                  ),
+                  const SizedBox(width: 2),
+                  _ManagementButton(
+                    icon: Icons.horizontal_split,
+                    tooltip: 'Split Down',
+                    onTap: () => core.layout.splitNode(widget.nodeId, SplitDirection.column),
+                  ),
+                  const SizedBox(width: 2),
+                  _ManagementButton(
+                    icon: Icons.close,
+                    tooltip: 'Close Pane',
+                    color: AppColors.error,
+                    onTap: () => core.layout.closeNode(widget.nodeId),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ManagementButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final Color? color;
+  final VoidCallback onTap;
+
+  const _ManagementButton({required this.icon, required this.tooltip, this.color, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColorsExtension.of(context);
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: colors.surface.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(4),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(4),
+          child: Padding(
+            padding: const EdgeInsets.all(4),
+            child: Icon(icon, size: 14, color: color ?? colors.textSecondary),
           ),
         ),
       ),

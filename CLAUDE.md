@@ -2,6 +2,18 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Logging & Workflow
+
+All work is logged in the vault's central changelog: `D:\Obsidian\jmsl\changelog.md`
+- Format: `- \`HH:MM\` \`[marcha]\` **TYPE** — Description`
+- Types: `BUG FIX` | `FEATURE` | `FRICTION` | `DOC UPDATE` | `DECISION` | `GOTCHA` | `REFACTOR` | `DEPLOY`
+- Log as you go. End sessions with a CHECKPOINT line.
+- **First action in every conversation**: Read `D:\Obsidian\jmsl\active_threads.md`, register what you're working on. Update if the subject shifts. See vault CLAUDE.md § Conversation Tracking.
+
+After completing work, update relevant docs:
+- This CLAUDE.md — if you discovered something hard to find
+- Design ideas → `D:\Obsidian\jmsl\todos.md` (see vault CLAUDE.md for workflow)
+
 ## Project Overview
 Marcha is a Windows 11 startup management tool built with Flutter and native C++. It manages VS Code windows across virtual desktops and executes startup commands.
 

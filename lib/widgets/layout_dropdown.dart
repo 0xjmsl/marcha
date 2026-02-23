@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import '../core/core.dart';
-import '../models/layout_preset.dart';
+import '../models/layout_presets.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 
-class LayoutDropdown extends StatelessWidget {
-  const LayoutDropdown({super.key});
+/// Layout controls: management mode toggle + preset dropdown
+class LayoutControls extends StatelessWidget {
+  const LayoutControls({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -14,78 +15,87 @@ class LayoutDropdown extends StatelessWidget {
     return ListenableBuilder(
       listenable: core,
       builder: (context, _) {
-        final currentPreset = core.layout.currentPreset;
-        final options = core.layout.layoutOptions();
+        final isManagementMode = core.layout.isPaneManagementMode;
 
-        return PopupMenuButton<LayoutPreset>(
-          tooltip: 'Change layout',
-          offset: const Offset(0, 40),
-          onSelected: (preset) {
-            core.layout.setLayout(preset);
-          },
-          itemBuilder: (context) {
-            return options.map((preset) {
-              final isSelected = preset == currentPreset;
-              return PopupMenuItem<LayoutPreset>(
-                value: preset,
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Management mode toggle
+            Tooltip(
+              message: isManagementMode ? 'Exit pane management' : 'Manage panes',
+              child: InkWell(
+                onTap: () => core.layout.togglePaneManagementMode(),
+                borderRadius: BorderRadius.circular(4),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isManagementMode ? AppColors.accent.withValues(alpha: 0.15) : colors.surfaceLight,
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color: isManagementMode ? AppColors.accent.withValues(alpha: 0.5) : colors.border,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.dashboard_customize,
+                    size: 18,
+                    color: isManagementMode ? AppColors.accent : colors.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 4),
+            // Preset dropdown
+            PopupMenuButton<String>(
+              tooltip: 'Layout presets',
+              offset: const Offset(0, 40),
+              onSelected: (presetName) {
+                core.layout.applyPreset(presetName);
+              },
+              itemBuilder: (context) {
+                return LayoutPresets.presets.map((preset) {
+                  return PopupMenuItem<String>(
+                    value: preset.name,
+                    child: Row(
+                      children: [
+                        Icon(preset.icon, size: 18, color: colors.textSecondary),
+                        const SizedBox(width: 12),
+                        Text(
+                          preset.displayName,
+                          style: AppTheme.bodyNormal.copyWith(color: colors.textPrimary),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList();
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: colors.surfaceLight,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: colors.border),
+                ),
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      preset.icon,
-                      size: 18,
-                      color: isSelected ? AppColors.accent : colors.textSecondary,
-                    ),
-                    const SizedBox(width: 12),
+                    Icon(Icons.view_week, size: 18, color: colors.textSecondary),
+                    const SizedBox(width: 8),
                     Text(
-                      preset.displayName,
-                      style: AppTheme.bodyNormal.copyWith(
-                        color: isSelected ? AppColors.accent : colors.textPrimary,
-                      ),
+                      'Layout',
+                      style: AppTheme.monoNormal.copyWith(color: colors.textPrimary),
                     ),
-                    if (isSelected) ...[
-                      const Spacer(),
-                      const Icon(
-                        Icons.check,
-                        size: 16,
-                        color: AppColors.accent,
-                      ),
-                    ],
+                    const SizedBox(width: 8),
+                    Icon(Icons.arrow_drop_down, size: 18, color: colors.textSecondary),
                   ],
                 ),
-              );
-            }).toList();
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: colors.surfaceLight,
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: colors.border),
+              ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  currentPreset.icon,
-                  size: 18,
-                  color: colors.textSecondary,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  currentPreset.displayName,
-                  style: AppTheme.monoNormal.copyWith(color: colors.textPrimary),
-                ),
-                const SizedBox(width: 8),
-                Icon(
-                  Icons.arrow_drop_down,
-                  size: 18,
-                  color: colors.textSecondary,
-                ),
-              ],
-            ),
-          ),
+          ],
         );
       },
     );
   }
 }
+
+/// Keep the old name as an alias for backward compat in imports
+typedef LayoutDropdown = LayoutControls;

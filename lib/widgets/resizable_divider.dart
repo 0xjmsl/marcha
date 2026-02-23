@@ -4,16 +4,13 @@ import '../core/core.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 
-/// Which ratio group this divider controls
-enum RatioGroup { main, nested1, nested2 }
-
 /// A draggable divider for resizing panes
 class ResizableDivider extends StatefulWidget {
   final Axis axis;
-  final RatioGroup ratioGroup;
+  final String parentNodeId;
   final int dividerIndex;
 
-  const ResizableDivider({super.key, required this.axis, required this.ratioGroup, required this.dividerIndex});
+  const ResizableDivider({super.key, required this.axis, required this.parentNodeId, required this.dividerIndex});
 
   @override
   State<ResizableDivider> createState() => _ResizableDividerState();
@@ -30,7 +27,6 @@ class _ResizableDividerState extends State<ResizableDivider> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Get the total size in the drag direction
         final totalSize = isVertical ? constraints.maxHeight : constraints.maxWidth;
 
         return MouseRegion(
@@ -49,20 +45,16 @@ class _ResizableDividerState extends State<ResizableDivider> {
             onVerticalDragStart: !isVertical ? (_) => _onDragStart() : null,
             onVerticalDragUpdate: !isVertical ? (details) => _onDragUpdate(details.delta.dy, totalSize) : null,
             onVerticalDragEnd: !isVertical ? (_) => _onDragEnd() : null,
-            // Stack: line fills full size, grip handle overlays on hover
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // The actual divider line - full height/width, 1px thick
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
                   width: isVertical ? 1 : double.infinity,
                   height: !isVertical ? 1 : double.infinity,
                   color: _isHovering || _isDragging ? colors.borderLight : colors.border,
                 ),
-                // Invisible hit target area (wider for easier grabbing)
                 Container(width: isVertical ? 1 : double.infinity, height: !isVertical ? 1 : double.infinity, color: Colors.transparent),
-                // Grip handle on hover
                 if (_isHovering || _isDragging) _buildGripHandle(isVertical, colors),
               ],
             ),
@@ -73,7 +65,6 @@ class _ResizableDividerState extends State<ResizableDivider> {
   }
 
   Widget _buildGripHandle(bool isVertical, AppColorScheme colors) {
-    // Build grip dots
     const dotSize = 3.0;
     const dotSpacing = 4.0;
     const dotCount = 3;
@@ -108,17 +99,7 @@ class _ResizableDividerState extends State<ResizableDivider> {
   }
 
   void _onDragUpdate(double delta, double totalSize) {
-    switch (widget.ratioGroup) {
-      case RatioGroup.main:
-        core.layout.updateMainRatios(widget.dividerIndex, delta, totalSize);
-        break;
-      case RatioGroup.nested1:
-        core.layout.updateNested1Ratios(widget.dividerIndex, delta, totalSize);
-        break;
-      case RatioGroup.nested2:
-        core.layout.updateNested2Ratios(widget.dividerIndex, delta, totalSize);
-        break;
-    }
+    core.layout.updateFlex(widget.parentNodeId, widget.dividerIndex, delta, totalSize);
   }
 
   void _onDragEnd() {

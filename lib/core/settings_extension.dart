@@ -309,9 +309,9 @@ class SettingsExtension {
     final layoutData = _core.layout.exportForSettings();
 
     _settings = _settings.copyWith(
-      layoutPreset: layoutData.preset,
+      layoutTree: layoutData.tree,
+      layoutNextSlotIndex: layoutData.nextSlotIndex,
       slotAssignments: layoutData.slots,
-      paneSizes: layoutData.sizes,
     );
 
     await _save();

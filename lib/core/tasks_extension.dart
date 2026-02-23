@@ -1,6 +1,23 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+
 import '../models/task.dart';
 import '../models/template.dart';
 import 'core.dart';
+
+/// A single step in an orchestrated restart sequence
+class RestartStep {
+  final String taskId;
+  final int killDelayMs;
+  final int startDelayMs;
+
+  RestartStep({
+    required this.taskId,
+    this.killDelayMs = 0,
+    this.startDelayMs = 0,
+  });
+}
 
 /// Extension managing running and historic tasks
 class TasksExtension {
@@ -144,6 +161,55 @@ class TasksExtension {
     }
     _tasks.removeWhere((t) => !t.isRunning);
     _core.notify();
+  }
+
+  /// Orchestrated restart: kill tasks in order, then start in order, with delays
+  Future<void> orchestrateRestart(List<RestartStep> sequence) async {
+    debugPrint('TasksExtension: Starting restart sequence (${sequence.length} tasks)');
+
+    // Phase 1: Kill in order
+    for (final step in sequence) {
+      final task = getById(step.taskId);
+      if (task == null) continue;
+
+      if (task.isRunning) {
+        debugPrint('TasksExtension: Killing ${step.taskId}');
+        kill(step.taskId);
+        await _waitForExit(step.taskId, timeoutMs: 10000);
+      }
+
+      if (step.killDelayMs > 0) {
+        debugPrint('TasksExtension: Waiting ${step.killDelayMs}ms after kill');
+        await Future.delayed(Duration(milliseconds: step.killDelayMs));
+      }
+    }
+
+    // Phase 2: Start in order
+    for (final step in sequence) {
+      final task = getById(step.taskId);
+      if (task == null || task.isRunning) continue;
+
+      debugPrint('TasksExtension: Starting ${step.taskId}');
+      run(step.taskId);
+
+      if (step.startDelayMs > 0) {
+        debugPrint('TasksExtension: Waiting ${step.startDelayMs}ms after start');
+        await Future.delayed(Duration(milliseconds: step.startDelayMs));
+      }
+    }
+
+    debugPrint('TasksExtension: Restart sequence complete');
+  }
+
+  /// Poll until a task exits or timeout
+  Future<void> _waitForExit(String taskId, {required int timeoutMs}) async {
+    final deadline = DateTime.now().add(Duration(milliseconds: timeoutMs));
+    while (DateTime.now().isBefore(deadline)) {
+      final task = getById(taskId);
+      if (task == null || !task.isRunning) return;
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+    debugPrint('TasksExtension: Timeout waiting for $taskId to exit');
   }
 
   void _updateHistoryOnStop(String taskId) {

@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marcha</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #0a0a0f;
+    color: #e0e0e0;
+    min-height: 100vh;
+    padding: 24px;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  header h1 {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: #fff;
+  }
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+  }
+  .status-dot.ok { background: #4ade80; }
+  .status-dot.err { background: #f87171; }
+  .refresh-info {
+    font-size: 12px;
+    color: #666;
+  }
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #888;
+    margin-bottom: 12px;
+  }
+
+  /* Tasks grid */
+  .tasks {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .task-card {
+    background: #14141f;
+    border: 1px solid #1e1e2e;
+    border-radius: 8px;
+    padding: 16px;
+    transition: border-color 0.2s;
+  }
+  .task-card:hover { border-color: #333; }
+  .task-card .top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .task-card .name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+  }
+  .badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .badge.running { background: #166534; color: #4ade80; }
+  .badge.idle { background: #1e1e2e; color: #888; }
+  .badge.stopped { background: #7f1d1d; color: #f87171; }
+  .badge.error { background: #7f1d1d; color: #f87171; }
+  .task-card .meta {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 12px;
+  }
+  .task-card .meta span { margin-right: 16px; }
+  .task-card .actions {
+    display: flex;
+    gap: 6px;
+  }
+  .btn {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 12px;
+    border: 1px solid #2a2a3a;
+    border-radius: 5px;
+    background: #1a1a2a;
+    color: #ccc;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn:hover { background: #252538; border-color: #444; color: #fff; }
+  .btn:active { transform: scale(0.97); }
+  .btn.danger { border-color: #7f1d1d; }
+  .btn.danger:hover { background: #3f0d0d; border-color: #f87171; color: #f87171; }
+  .btn.go { border-color: #166534; }
+  .btn.go:hover { background: #0d2818; border-color: #4ade80; color: #4ade80; }
+  .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* Templates */
+  .templates {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 32px;
+  }
+  .tmpl-btn {
+    font-size: 12px;
+    padding: 6px 14px;
+    border: 1px solid #1e1e2e;
+    border-radius: 6px;
+    background: #14141f;
+    color: #ccc;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .tmpl-btn:hover { background: #1a1a2a; border-color: #4ade80; color: #4ade80; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #1a1a2a;
+    border: 1px solid #2a2a3a;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 13px;
+    color: #ccc;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s;
+    pointer-events: none;
+    z-index: 100;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.err { border-color: #7f1d1d; color: #f87171; }
+
+  /* Log viewer */
+  .log-section { margin-bottom: 32px; }
+  .log-viewer {
+    background: #0d0d14;
+    border: 1px solid #1e1e2e;
+    border-radius: 8px;
+    padding: 12px;
+    max-height: 300px;
+    overflow-y: auto;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #999;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .log-viewer::-webkit-scrollbar { width: 6px; }
+  .log-viewer::-webkit-scrollbar-track { background: transparent; }
+  .log-viewer::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+</style>
+</head>
+<body>
+  <header>
+    <h1><span class="status-dot ok" id="connDot"></span>Marcha</h1>
+    <span class="refresh-info" id="lastRefresh"></span>
+  </header>
+
+  <div class="section-title">Tasks</div>
+  <div class="tasks" id="tasksGrid"></div>
+
+  <div class="section-title">Templates</div>
+  <div class="templates" id="templatesList"></div>
+
+  <div class="log-section">
+    <div class="section-title">Selected Task Log</div>
+    <div class="log-viewer" id="logViewer">Click a task name to view its live log.</div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+const API = 'http://127.0.0.1:7832';
+let selectedTaskId = null;
+
+// --- API helpers ---
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(`${API}${path}`, opts);
+  return res.json();
+}
+
+function toast(msg, isErr) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (isErr ? ' err' : '');
+  setTimeout(() => el.className = 'toast', 2500);
+}
+
+// --- Render ---
+function renderTasks(tasks) {
+  const grid = document.getElementById('tasksGrid');
+  if (!tasks.length) { grid.innerHTML = '<div style="color:#666">No tasks.</div>'; return; }
+
+  grid.innerHTML = tasks.map(t => {
+    const running = t.status === 'running';
+    const badgeClass = running ? 'running' : (t.status === 'error' ? 'error' : 'idle');
+    const name = t.templateName || t.name || '?';
+    const pid = t.pid || '-';
+
+    return `
+      <div class="task-card" data-id="${t.id}">
+        <div class="top">
+          <span class="name" style="cursor:pointer" onclick="viewLog('${t.id}')">${esc(name)}</span>
+          <span class="badge ${badgeClass}">${t.status}</span>
+        </div>
+        <div class="meta">
+          <span>ID: ${t.id}</span>
+          <span>PID: ${pid}</span>
+        </div>
+        <div class="actions">
+          <button class="btn go" onclick="runTask('${t.id}')" ${running ? 'disabled' : ''}>Start</button>
+          <button class="btn" onclick="stopTask('${t.id}')" ${!running ? 'disabled' : ''}>Stop</button>
+          <button class="btn danger" onclick="killTask('${t.id}')" ${!running ? 'disabled' : ''}>Kill</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderTemplates(templates) {
+  const list = document.getElementById('templatesList');
+  if (!templates.length) { list.innerHTML = '<div style="color:#666">No templates.</div>'; return; }
+
+  list.innerHTML = templates.map(t => {
+    const label = (t.emoji ? t.emoji + ' ' : '') + (t.name || t.id);
+    return `<button class="tmpl-btn" onclick="launchTemplate('${t.id}')">${esc(label)}</button>`;
+  }).join('');
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// --- Actions ---
+async function runTask(id) {
+  try {
+    await api('POST', `/api/tasks/${id}/run`);
+    toast(`Started ${id}`);
+    refresh();
+  } catch (e) { toast(`Failed: ${e.message}`, true); }
+}
+
+async function stopTask(id) {
+  try {
+    await api('POST', `/api/tasks/${id}/stop`);
+    toast(`Stopped ${id}`);
+    refresh();
+  } catch (e) { toast(`Failed: ${e.message}`, true); }
+}
+
+async function killTask(id) {
+  try {
+    await api('POST', `/api/tasks/${id}/kill`);
+    toast(`Killed ${id}`);
+    refresh();
+  } catch (e) { toast(`Failed: ${e.message}`, true); }
+}
+
+async function launchTemplate(id) {
+  try {
+    const data = await api('POST', `/api/templates/${id}/launch`);
+    toast(`Launched -> ${data.taskId}`);
+    refresh();
+  } catch (e) { toast(`Failed: ${e.message}`, true); }
+}
+
+async function viewLog(taskId) {
+  selectedTaskId = taskId;
+  const viewer = document.getElementById('logViewer');
+  try {
+    const data = await api('GET', `/api/tasks/${taskId}`);
+    const log = data.log;
+    if (log && log.length) {
+      const lines = Array.isArray(log) ? log : [log];
+      viewer.textContent = lines.slice(-200).join('\n');
+    } else {
+      viewer.textContent = `No log output for ${taskId}.`;
+    }
+    viewer.scrollTop = viewer.scrollHeight;
+  } catch (e) {
+    viewer.textContent = `Error loading log: ${e.message}`;
+  }
+}
+
+// --- Refresh loop ---
+async function refresh() {
+  try {
+    const [tasksData, tmplData] = await Promise.all([
+      api('GET', '/api/tasks'),
+      api('GET', '/api/templates'),
+    ]);
+    renderTasks(tasksData.tasks || []);
+    renderTemplates(tmplData.templates || []);
+
+    document.getElementById('connDot').className = 'status-dot ok';
+    document.getElementById('lastRefresh').textContent =
+      'Updated ' + new Date().toLocaleTimeString();
+
+    // Refresh selected log
+    if (selectedTaskId) viewLog(selectedTaskId);
+  } catch (e) {
+    document.getElementById('connDot').className = 'status-dot err';
+    document.getElementById('lastRefresh').textContent = 'Connection lost';
+  }
+}
+
+// Initial load + auto-refresh every 5s
+refresh();
+setInterval(refresh, 5000);
+</script>
+</body>
+</html>

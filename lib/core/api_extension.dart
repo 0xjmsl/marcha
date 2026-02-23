@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../models/slot_assignment.dart';
 import 'eip191_verifier.dart';
 import 'core.dart';
+import 'tasks_extension.dart';
 
 /// A single log entry for the API request log
 class ApiLogEntry {
@@ -87,7 +88,9 @@ class ApiExtension {
     ApiEndpoint('GET', '/api/layout', 'get_layout'),
     ApiEndpoint('POST', '/api/layout/assign', 'assign_layout'),
     ApiEndpoint('GET', '/api/history', 'get_history'),
+    ApiEndpoint('GET', '/api/logs/:historyId', 'get_log'),
     ApiEndpoint('GET', '/api/resources/:taskId', 'get_resources'),
+    ApiEndpoint('POST', '/api/restart', 'restart_tasks'),
     ApiEndpoint('GET', '/api/debug/log', 'get_debug_log'),
   ];
 
@@ -309,8 +312,12 @@ class ApiExtension {
         return _assignLayout(data);
       case 'get_history':
         return _getHistory();
+      case 'get_log':
+        return await _getLog(params['historyId']!);
       case 'get_resources':
         return _getResources(params['taskId']!);
+      case 'restart_tasks':
+        return _restartTasks(data);
       case 'get_debug_log':
         return _getDebugLog();
       default:
@@ -326,7 +333,7 @@ class ApiExtension {
       'templates': _core.templates.all.map((t) => t.toJson()).toList(),
       'history': _core.history.all.map((h) => h.toJson()).toList(),
       'layout': {
-        'preset': _core.layout.currentPreset.name,
+        'preset': 'custom',
         'slots': _core.layout.slots.map((s) => s.toJson()).toList(),
       },
     });
@@ -399,7 +406,7 @@ class ApiExtension {
 
   _HandlerResult _getLayout() {
     return _HandlerResult.ok({
-      'preset': _core.layout.currentPreset.name,
+      'preset': 'custom',
       'slots': _core.layout.slots.map((s) => s.toJson()).toList(),
     });
   }
@@ -427,7 +434,7 @@ class ApiExtension {
     _core.layout.assignSlot(slotIndex, type, contentId);
     return _HandlerResult.ok({
       'ok': true,
-      'preset': _core.layout.currentPreset.name,
+      'preset': 'custom',
       'slots': _core.layout.slots.map((s) => s.toJson()).toList(),
     });
   }
@@ -436,6 +443,12 @@ class ApiExtension {
     return _HandlerResult.ok({
       'history': _core.history.all.map((h) => h.toJson()).toList(),
     });
+  }
+
+  Future<_HandlerResult> _getLog(String historyId) async {
+    final log = await _core.logs.get(historyId);
+    if (log == null) return _HandlerResult.notFound('Log not found');
+    return _HandlerResult.ok(log.toJson());
   }
 
   _HandlerResult _getResources(String taskId) {
@@ -461,6 +474,42 @@ class ApiExtension {
                 'timestamp': s.timestamp.toIso8601String(),
               })
           .toList(),
+    });
+  }
+
+  _HandlerResult _restartTasks(Map<String, dynamic> data) {
+    final tasksList = data['tasks'] as List<dynamic>?;
+    if (tasksList == null || tasksList.isEmpty) {
+      return _HandlerResult.badRequest('Missing "tasks" array');
+    }
+
+    final sequence = <RestartStep>[];
+    for (final item in tasksList) {
+      if (item is! Map<String, dynamic>) {
+        return _HandlerResult.badRequest('Each task item must be an object');
+      }
+      final taskId = item['taskId'] as String?;
+      if (taskId == null) {
+        return _HandlerResult.badRequest('Each task needs "taskId"');
+      }
+      final task = _core.tasks.getById(taskId);
+      if (task == null) {
+        return _HandlerResult.notFound('Task $taskId not found');
+      }
+      sequence.add(RestartStep(
+        taskId: taskId,
+        killDelayMs: item['killDelayMs'] as int? ?? 0,
+        startDelayMs: item['startDelayMs'] as int? ?? 0,
+      ));
+    }
+
+    // Fire and forget — returns immediately, orchestration runs async
+    _core.tasks.orchestrateRestart(sequence);
+
+    return _HandlerResult.ok({
+      'ok': true,
+      'status': 'restart sequence initiated',
+      'tasks': sequence.map((s) => s.taskId).toList(),
     });
   }
 

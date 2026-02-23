@@ -1,7 +1,5 @@
 import 'package:collection/collection.dart';
 import '../theme/terminal_theme.dart';
-import 'layout_preset.dart';
-import 'layout_sizes.dart';
 import 'slot_assignment.dart';
 import 'ui_sizes.dart';
 
@@ -44,10 +42,10 @@ class AppSettings {
   final String terminalThemeId;
   final List<TerminalTheme> customTerminalThemes;
 
-  // Layout persistence fields
-  final LayoutPreset layoutPreset;
+  // Layout persistence fields (tree-based)
+  final Map<String, dynamic>? layoutTree;
+  final int layoutNextSlotIndex;
   final List<SlotAssignment> slotAssignments;
-  final Map<String, LayoutSizes> paneSizes;
 
   // UI sizes configuration
   final UiSizes uiSizes;
@@ -67,9 +65,9 @@ class AppSettings {
     this.maxConcurrentTasks = 10,
     this.terminalThemeId = 'default_dark',
     this.customTerminalThemes = const [],
-    this.layoutPreset = LayoutPreset.threeColumns,
+    this.layoutTree,
+    this.layoutNextSlotIndex = 3,
     this.slotAssignments = const [],
-    this.paneSizes = const {},
     this.uiSizes = const UiSizes(),
     this.apiEnabled = false,
     this.apiPort = 7832,
@@ -104,12 +102,6 @@ class AppSettings {
                 .toList() ??
             [];
 
-    final paneSizesMap = (json['paneSizes'] as Map<String, dynamic>?)?.map(
-          (key, value) =>
-              MapEntry(key, LayoutSizes.fromJson(value as Map<String, dynamic>)),
-        ) ??
-        {};
-
     final uiSizesData = json['uiSizes'] as Map<String, dynamic>?;
     final uiSizes = uiSizesData != null ? UiSizes.fromJson(uiSizesData) : const UiSizes();
 
@@ -130,11 +122,9 @@ class AppSettings {
       maxConcurrentTasks: json['maxConcurrentTasks'] as int? ?? 10,
       terminalThemeId: json['terminalThemeId'] as String? ?? 'default_dark',
       customTerminalThemes: customThemesList,
-      layoutPreset: LayoutPreset.fromName(
-        json['layoutPreset'] as String? ?? 'threeColumns',
-      ),
+      layoutTree: json['layoutTree'] as Map<String, dynamic>?,
+      layoutNextSlotIndex: json['layoutNextSlotIndex'] as int? ?? 3,
       slotAssignments: slotAssignmentsList,
-      paneSizes: paneSizesMap,
       uiSizes: uiSizes,
       apiEnabled: json['apiEnabled'] as bool? ?? false,
       apiPort: json['apiPort'] as int? ?? 7832,
@@ -154,10 +144,9 @@ class AppSettings {
         'terminalThemeId': terminalThemeId,
         'customTerminalThemes':
             customTerminalThemes.map((t) => t.toJson()).toList(),
-        'layoutPreset': layoutPreset.name,
+        if (layoutTree != null) 'layoutTree': layoutTree,
+        'layoutNextSlotIndex': layoutNextSlotIndex,
         'slotAssignments': slotAssignments.map((s) => s.toJson()).toList(),
-        'paneSizes':
-            paneSizes.map((key, value) => MapEntry(key, value.toJson())),
         'uiSizes': uiSizes.toJson(),
         'apiEnabled': apiEnabled,
         'apiPort': apiPort,
@@ -175,9 +164,9 @@ class AppSettings {
     int? maxConcurrentTasks,
     String? terminalThemeId,
     List<TerminalTheme>? customTerminalThemes,
-    LayoutPreset? layoutPreset,
+    Map<String, dynamic>? layoutTree,
+    int? layoutNextSlotIndex,
     List<SlotAssignment>? slotAssignments,
-    Map<String, LayoutSizes>? paneSizes,
     UiSizes? uiSizes,
     bool? apiEnabled,
     int? apiPort,
@@ -195,9 +184,9 @@ class AppSettings {
       maxConcurrentTasks: maxConcurrentTasks ?? this.maxConcurrentTasks,
       terminalThemeId: terminalThemeId ?? this.terminalThemeId,
       customTerminalThemes: customTerminalThemes ?? this.customTerminalThemes,
-      layoutPreset: layoutPreset ?? this.layoutPreset,
+      layoutTree: layoutTree ?? this.layoutTree,
+      layoutNextSlotIndex: layoutNextSlotIndex ?? this.layoutNextSlotIndex,
       slotAssignments: slotAssignments ?? this.slotAssignments,
-      paneSizes: paneSizes ?? this.paneSizes,
       uiSizes: uiSizes ?? this.uiSizes,
       apiEnabled: apiEnabled ?? this.apiEnabled,
       apiPort: apiPort ?? this.apiPort,
@@ -220,10 +209,10 @@ class AppSettings {
           terminalThemeId == other.terminalThemeId &&
           const ListEquality()
               .equals(customTerminalThemes, other.customTerminalThemes) &&
-          layoutPreset == other.layoutPreset &&
+          const MapEquality().equals(layoutTree, other.layoutTree) &&
+          layoutNextSlotIndex == other.layoutNextSlotIndex &&
           const ListEquality()
               .equals(slotAssignments, other.slotAssignments) &&
-          const MapEquality().equals(paneSizes, other.paneSizes) &&
           uiSizes == other.uiSizes &&
           apiEnabled == other.apiEnabled &&
           apiPort == other.apiPort &&
@@ -242,9 +231,9 @@ class AppSettings {
       maxConcurrentTasks.hashCode ^
       terminalThemeId.hashCode ^
       const ListEquality().hash(customTerminalThemes) ^
-      layoutPreset.hashCode ^
+      const MapEquality().hash(layoutTree) ^
+      layoutNextSlotIndex.hashCode ^
       const ListEquality().hash(slotAssignments) ^
-      const MapEquality().hash(paneSizes) ^
       uiSizes.hashCode ^
       apiEnabled.hashCode ^
       apiPort.hashCode ^
