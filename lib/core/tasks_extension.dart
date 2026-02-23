@@ -163,14 +163,21 @@ class TasksExtension {
     _core.notify();
   }
 
-  /// Orchestrated restart: kill tasks in order, then start in order, with delays
+  /// Orchestrated restart: kill and remove old tasks, then launch fresh ones
   Future<void> orchestrateRestart(List<RestartStep> sequence) async {
     debugPrint('TasksExtension: Starting restart sequence (${sequence.length} tasks)');
 
-    // Phase 1: Kill in order
+    // Phase 1: Kill in order, remembering template + pane slot for each
+    final restartInfo = <({String? templateId, int? slotIndex, RestartStep step})>[];
+
     for (final step in sequence) {
       final task = getById(step.taskId);
       if (task == null) continue;
+
+      final templateId = task.templateId;
+      final slotIndex = _core.layout.findSlotByTaskId(step.taskId);
+
+      restartInfo.add((templateId: templateId, slotIndex: slotIndex, step: step));
 
       if (task.isRunning) {
         debugPrint('TasksExtension: Killing ${step.taskId}');
@@ -178,23 +185,48 @@ class TasksExtension {
         await _waitForExit(step.taskId, timeoutMs: 10000);
       }
 
+      // Fully remove the old task (dispose terminal, remove from list)
+      debugPrint('TasksExtension: Removing old task ${step.taskId}');
+      task.dispose();
+      _tasks.removeWhere((t) => t.id == step.taskId);
+
+      // Clear the pane so it looks like the process was closed
+      if (slotIndex != null) {
+        _core.layout.clearSlot(slotIndex);
+      }
+
+      _core.notify();
+
       if (step.killDelayMs > 0) {
         debugPrint('TasksExtension: Waiting ${step.killDelayMs}ms after kill');
         await Future.delayed(Duration(milliseconds: step.killDelayMs));
       }
     }
 
-    // Phase 2: Start in order
-    for (final step in sequence) {
-      final task = getById(step.taskId);
-      if (task == null || task.isRunning) continue;
+    // Phase 2: Launch fresh tasks from templates, assign to same pane slots
+    for (final info in restartInfo) {
+      if (info.templateId == null) {
+        debugPrint('TasksExtension: Skipping ${info.step.taskId} — no template');
+        continue;
+      }
 
-      debugPrint('TasksExtension: Starting ${step.taskId}');
-      run(step.taskId);
+      final template = _core.templates.getById(info.templateId!);
+      if (template == null) {
+        debugPrint('TasksExtension: Template ${info.templateId} not found, skipping');
+        continue;
+      }
 
-      if (step.startDelayMs > 0) {
-        debugPrint('TasksExtension: Waiting ${step.startDelayMs}ms after start');
-        await Future.delayed(Duration(milliseconds: step.startDelayMs));
+      debugPrint('TasksExtension: Launching fresh task from template ${template.name}');
+      final newTask = launch(template);
+
+      // Re-assign the new task to the same pane slot
+      if (info.slotIndex != null) {
+        _core.layout.assignTerminal(info.slotIndex!, newTask.id);
+      }
+
+      if (info.step.startDelayMs > 0) {
+        debugPrint('TasksExtension: Waiting ${info.step.startDelayMs}ms after start');
+        await Future.delayed(Duration(milliseconds: info.step.startDelayMs));
       }
     }
 
