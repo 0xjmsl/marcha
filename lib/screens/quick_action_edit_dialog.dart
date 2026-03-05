@@ -23,7 +23,7 @@ class QuickActionEditDialog extends StatefulWidget {
           side: BorderSide(color: colors.border),
         ),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 400, maxHeight: 350),
+          constraints: const BoxConstraints(maxWidth: 400, maxHeight: 500),
           child: QuickActionEditDialog(action: action),
         ),
       ),
@@ -38,7 +38,10 @@ class _QuickActionEditDialogState extends State<QuickActionEditDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   late final TextEditingController _commandController;
+  late final TextEditingController _scheduleValueController;
   late String _selectedEmoji;
+  ScheduleType? _scheduleType;
+  late bool _scheduleEnabled;
 
   bool get isEditing => widget.action != null;
 
@@ -48,13 +51,18 @@ class _QuickActionEditDialogState extends State<QuickActionEditDialog> {
     final a = widget.action;
     _nameController = TextEditingController(text: a?.name ?? '');
     _commandController = TextEditingController(text: a?.command ?? '');
+    _scheduleValueController =
+        TextEditingController(text: a?.scheduleValue ?? '');
     _selectedEmoji = a?.emoji ?? '⚡';
+    _scheduleType = a?.scheduleType;
+    _scheduleEnabled = a?.scheduleEnabled ?? true;
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _commandController.dispose();
+    _scheduleValueController.dispose();
     super.dispose();
   }
 
@@ -73,9 +81,39 @@ class _QuickActionEditDialogState extends State<QuickActionEditDialog> {
       name: _nameController.text.trim(),
       command: _commandController.text.trim(),
       emoji: _selectedEmoji,
+      scheduleType: _scheduleType,
+      scheduleValue: _scheduleType != null
+          ? _scheduleValueController.text.trim()
+          : null,
+      scheduleEnabled: _scheduleEnabled,
     );
 
     Navigator.pop(context, action);
+  }
+
+  String get _scheduleHint {
+    switch (_scheduleType) {
+      case ScheduleType.clock:
+        return '08:00';
+      case ScheduleType.interval:
+        return '30';
+      case ScheduleType.oneShot:
+        return '15 or 14:30';
+      case null:
+        return '';
+    }
+  }
+
+  String get _scheduleSuffix {
+    switch (_scheduleType) {
+      case ScheduleType.interval:
+        return 'minutes';
+      case ScheduleType.oneShot:
+        final v = _scheduleValueController.text;
+        return v.contains(':') ? '' : 'minutes';
+      default:
+        return '';
+    }
   }
 
   @override
@@ -216,10 +254,116 @@ class _QuickActionEditDialogState extends State<QuickActionEditDialog> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  // Schedule section
+                  Row(
+                    children: [
+                      Text(
+                        'Schedule',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: colors.textPrimary,
+                        ),
+                      ),
+                      const Spacer(),
+                      SizedBox(
+                        height: 28,
+                        child: Switch(
+                          value: _scheduleType != null,
+                          onChanged: (on) {
+                            setState(() {
+                              _scheduleType =
+                                  on ? ScheduleType.interval : null;
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_scheduleType != null) ...[
+                    const SizedBox(height: 8),
+                    // Type selector
+                    SizedBox(
+                      width: double.infinity,
+                      child: SegmentedButton<ScheduleType>(
+                        segments: const [
+                          ButtonSegment(
+                            value: ScheduleType.clock,
+                            label: Text('Clock', style: TextStyle(fontSize: 12)),
+                            icon: Icon(Icons.schedule, size: 16),
+                          ),
+                          ButtonSegment(
+                            value: ScheduleType.interval,
+                            label: Text('Interval', style: TextStyle(fontSize: 12)),
+                            icon: Icon(Icons.repeat, size: 16),
+                          ),
+                          ButtonSegment(
+                            value: ScheduleType.oneShot,
+                            label: Text('Once', style: TextStyle(fontSize: 12)),
+                            icon: Icon(Icons.timer, size: 16),
+                          ),
+                        ],
+                        selected: {_scheduleType!},
+                        onSelectionChanged: (s) {
+                          setState(() => _scheduleType = s.first);
+                        },
+                        style: ButtonStyle(
+                          visualDensity: VisualDensity.compact,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Value field
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _scheduleValueController,
+                            validator: (v) {
+                              if (_scheduleType == null) return null;
+                              if (v == null || v.trim().isEmpty) {
+                                return 'Required';
+                              }
+                              return null;
+                            },
+                            style: TextStyle(
+                              color: colors.textPrimary,
+                              fontSize: 14,
+                              fontFamily: 'Consolas',
+                            ),
+                            decoration: InputDecoration(
+                              labelText: 'Value',
+                              hintText: _scheduleHint,
+                              filled: true,
+                              fillColor: colors.surfaceLight,
+                              suffixText: _scheduleSuffix,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: colors.border),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: colors.border),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide:
+                                    const BorderSide(color: AppColors.info),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   // Help text
                   Text(
-                    'The command will be sent to the terminal when the button is clicked.',
+                    _scheduleType != null
+                        ? 'The command will fire automatically on schedule and can still be triggered manually.'
+                        : 'The command will be sent to the terminal when the button is clicked.',
                     style: TextStyle(
                       fontSize: 12,
                       color: colors.textMuted,

@@ -7,6 +7,7 @@ import 'package:flutter_pty/flutter_pty.dart';
 import 'package:xterm/xterm.dart' as xterm;
 import 'template.dart';
 import 'task_step.dart';
+import 'quick_action.dart';
 import 'process_stats.dart';
 import '../services/native_bindings.dart';
 
@@ -35,6 +36,8 @@ class Task {
   final DateTime createdAt;
   final String? templateId;
   final List<TaskStep> steps; // Automation steps
+  final List<QuickAction> quickActions; // Scheduled/manual quick actions
+  final Map<String, String> envVars; // Per-task environment variables (merged with system at spawn)
 
   // Terminal state (lives with the task, survives navigation)
   final xterm.Terminal terminal;
@@ -54,6 +57,9 @@ class Task {
   Timer? _stepTimeoutTimer;
   String _outputBuffer = ''; // Buffer for pattern matching
   VoidCallback? onStepProgress; // Called when step status changes
+
+  // Scheduled quick action timers (runtime only)
+  final List<Timer> _quickActionTimers = [];
 
   // Log buffer to capture terminal output for persistence
   final List<String> _logBuffer = [];
@@ -95,6 +101,8 @@ class Task {
     required this.createdAt,
     this.templateId,
     this.steps = const [],
+    this.quickActions = const [],
+    this.envVars = const {},
   })  : terminal = xterm.Terminal(maxLines: 10000),
         terminalController = xterm.TerminalController() {
     // Wire terminal input to PTY (when PTY is started)
@@ -112,6 +120,8 @@ class Task {
     DateTime? createdAt,
     String? templateId,
     List<TaskStep>? steps,
+    List<QuickAction>? quickActions,
+    Map<String, String>? envVars,
   }) {
     return Task(
       id: id ?? this.id,
@@ -122,6 +132,8 @@ class Task {
       createdAt: createdAt ?? this.createdAt,
       templateId: templateId ?? this.templateId,
       steps: steps ?? this.steps,
+      quickActions: quickActions ?? this.quickActions,
+      envVars: envVars ?? this.envVars,
     );
   }
 
@@ -138,6 +150,7 @@ class Task {
         'pid': pid,
         'exitCode': exitCode,
         'isRunning': isRunning,
+        'quickActions': quickActions.map((a) => a.toJson()).toList(),
         'hasSteps': hasSteps,
         'currentStepIndex': currentStepIndex,
         'stepsCompleted': stepsCompleted,
@@ -193,7 +206,7 @@ class Task {
       workingDirectory: workingDirectory,
       columns: cols,
       rows: rows,
-      environment: Platform.environment,
+      environment: {...Platform.environment, ...envVars},
     );
 
     _pid = _pty!.pid;
@@ -254,6 +267,15 @@ class Task {
         // Start step execution if we have steps
         if (hasSteps) {
           _startStepExecution();
+        }
+
+        // Start scheduled quick actions
+        final scheduled = quickActions.where((a) => a.isScheduled).toList();
+        if (scheduled.isNotEmpty) {
+          for (final action in scheduled) {
+            _startScheduleTimer(action);
+          }
+          terminal.write('\x1b[90m[Schedule] ${scheduled.length} scheduled action(s) active\x1b[0m\r\n');
         }
 
         // Note: Resource monitoring is handled by the centralized ResourceMonitorExtension
@@ -469,8 +491,72 @@ class Task {
     _cleanup();
   }
 
+  // === SCHEDULED QUICK ACTIONS ===
+
+  void _startScheduleTimer(QuickAction action) {
+    switch (action.scheduleType!) {
+      case ScheduleType.interval:
+        final minutes = int.tryParse(action.scheduleValue ?? '') ?? 1;
+        final timer = Timer.periodic(Duration(minutes: minutes), (_) {
+          _fireScheduledAction(action);
+        });
+        _quickActionTimers.add(timer);
+      case ScheduleType.clock:
+        _scheduleAtClockTime(action);
+      case ScheduleType.oneShot:
+        final value = action.scheduleValue ?? '';
+        final delay = value.contains(':')
+            ? _delayUntilClockTime(value)
+            : Duration(minutes: int.tryParse(value) ?? 1);
+        final timer = Timer(delay, () {
+          _fireScheduledAction(action);
+        });
+        _quickActionTimers.add(timer);
+    }
+  }
+
+  void _fireScheduledAction(QuickAction action) {
+    if (!isRunning) return;
+    final now = DateTime.now();
+    final ts = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+    terminal.write('\x1b[90m[$ts][Schedule] Firing: ${action.name}\x1b[0m\r\n');
+    write('${action.command}\r\n');
+  }
+
+  void _scheduleAtClockTime(QuickAction action) {
+    final delay = _delayUntilClockTime(action.scheduleValue ?? '00:00');
+    final timer = Timer(delay, () {
+      _fireScheduledAction(action);
+      // Reschedule for next day
+      if (isRunning) {
+        _scheduleAtClockTime(action);
+      }
+    });
+    _quickActionTimers.add(timer);
+  }
+
+  Duration _delayUntilClockTime(String timeStr) {
+    final parts = timeStr.split(':');
+    final hour = int.tryParse(parts[0]) ?? 0;
+    final minute = parts.length > 1 ? (int.tryParse(parts[1]) ?? 0) : 0;
+    final now = DateTime.now();
+    var target = DateTime(now.year, now.month, now.day, hour, minute);
+    if (target.isBefore(now) || target.isAtSameMomentAs(now)) {
+      target = target.add(const Duration(days: 1));
+    }
+    return target.difference(now);
+  }
+
+  void _cancelQuickActionTimers() {
+    for (final timer in _quickActionTimers) {
+      timer.cancel();
+    }
+    _quickActionTimers.clear();
+  }
+
   void _cleanup() {
     _stepTimeoutTimer?.cancel();
+    _cancelQuickActionTimers();
     _outputSubscription?.cancel();
     _outputSubscription = null;
     _pty = null;
@@ -495,6 +581,8 @@ class Task {
       createdAt: DateTime.now(),
       templateId: template.id,
       steps: template.steps,
+      quickActions: template.quickActions,
+      envVars: template.envVars,
     );
   }
 
@@ -518,6 +606,11 @@ class Task {
       );
     }).toList();
 
+    // Substitute placeholders in env var values
+    final envVars = template.envVars.map((key, value) =>
+      MapEntry(key, PlaceholderExtractor.substitute(value, placeholderValues)),
+    );
+
     return Task(
       id: _generateId(),
       name: template.name,
@@ -527,6 +620,8 @@ class Task {
       createdAt: DateTime.now(),
       templateId: template.id,
       steps: steps,
+      quickActions: template.quickActions,
+      envVars: envVars,
     );
   }
 

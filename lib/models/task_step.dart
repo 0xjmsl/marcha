@@ -97,6 +97,7 @@ class PlaceholderExtractor {
     required String command,
     required List<String> arguments,
     List<TaskStep>? steps,
+    List<String>? envVarValues,
   }) {
     final placeholders = <String>{};
 
@@ -119,6 +120,15 @@ class PlaceholderExtractor {
           for (final match in _placeholderRegex.allMatches(step.send!)) {
             placeholders.add(match.group(1)!);
           }
+        }
+      }
+    }
+
+    // From env var values
+    if (envVarValues != null) {
+      for (final value in envVarValues) {
+        for (final match in _placeholderRegex.allMatches(value)) {
+          placeholders.add(match.group(1)!);
         }
       }
     }

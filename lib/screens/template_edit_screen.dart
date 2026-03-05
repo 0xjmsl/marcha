@@ -7,6 +7,7 @@ import '../models/task_step.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../widgets/emoji_picker.dart';
+import '../widgets/env_vars_editor.dart';
 import '../widgets/steps_editor.dart';
 
 /// Screen for creating or editing a template
@@ -48,6 +49,7 @@ class _TemplateEditScreenState extends State<TemplateEditScreen> {
   late final TextEditingController _descriptionController;
   late String _selectedEmoji;
   late List<TaskStep> _steps;
+  late Map<String, String> _envVars;
 
   bool get isEditing => widget.template != null;
 
@@ -64,6 +66,7 @@ class _TemplateEditScreenState extends State<TemplateEditScreen> {
     _descriptionController = TextEditingController(text: t?.description ?? '');
     _selectedEmoji = t?.emoji ?? '🚀';
     _steps = List.from(t?.steps ?? []);
+    _envVars = Map<String, String>.from(t?.envVars ?? {});
   }
 
   @override
@@ -121,6 +124,7 @@ class _TemplateEditScreenState extends State<TemplateEditScreen> {
       emoji: _selectedEmoji,
       description: description,
       steps: _steps,
+      envVars: _envVars,
     );
 
     if (isEditing) {
@@ -299,6 +303,15 @@ class _TemplateEditScreenState extends State<TemplateEditScreen> {
                     maxLines: 2,
                   ),
                   const SizedBox(height: 20),
+                  // Environment Variables
+                  EnvVarsEditor(
+                    envVars: _envVars,
+                    onChanged: (envVars) {
+                      setState(() => _envVars = envVars);
+                    },
+                    initiallyExpanded: _envVars.isNotEmpty,
+                  ),
+                  const SizedBox(height: 12),
                   // Automation Steps
                   StepsEditor(
                     steps: _steps,

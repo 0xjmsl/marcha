@@ -12,6 +12,7 @@ class Template {
   final String? description;
   final List<TaskStep> steps; // Automation steps (wait for pattern → send command)
   final List<QuickAction> quickActions; // User-defined quick action commands
+  final Map<String, String> envVars; // Per-template environment variables
 
   const Template({
     required this.id,
@@ -23,16 +24,18 @@ class Template {
     this.description,
     this.steps = const [],
     this.quickActions = const [],
+    this.envVars = const {},
   });
 
   /// Whether this template has automation steps
   bool get hasSteps => steps.isNotEmpty;
 
-  /// Get all placeholders from command, arguments, and steps
+  /// Get all placeholders from command, arguments, steps, and env var values
   Set<String> get placeholders => PlaceholderExtractor.extractAll(
         command: command,
         arguments: arguments,
         steps: steps,
+        envVarValues: envVars.values.toList(),
       );
 
   /// Whether this template requires placeholder input before running
@@ -61,6 +64,7 @@ class Template {
               ?.map((a) => QuickAction.fromJson(a as Map<String, dynamic>))
               .toList() ??
           [],
+      envVars: Map<String, String>.from(json['envVars'] ?? {}),
     );
   }
 
@@ -75,6 +79,7 @@ class Template {
         if (steps.isNotEmpty) 'steps': steps.map((s) => s.toJson()).toList(),
         if (quickActions.isNotEmpty)
           'quickActions': quickActions.map((a) => a.toJson()).toList(),
+        if (envVars.isNotEmpty) 'envVars': envVars,
       };
 
   Template copyWith({
@@ -87,6 +92,7 @@ class Template {
     String? description,
     List<TaskStep>? steps,
     List<QuickAction>? quickActions,
+    Map<String, String>? envVars,
   }) {
     return Template(
       id: id ?? this.id,
@@ -98,6 +104,7 @@ class Template {
       description: description ?? this.description,
       steps: steps ?? this.steps,
       quickActions: quickActions ?? this.quickActions,
+      envVars: envVars ?? this.envVars,
     );
   }
 }

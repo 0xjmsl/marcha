@@ -374,23 +374,44 @@ class _QuickActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = emojiSize ?? 12.0;
+    final tooltip = action.isScheduled
+        ? '${action.name}: ${action.command}\n${action.scheduleDescription}'
+        : '${action.name}: ${action.command}';
     return Tooltip(
-      message: '${action.name}: ${action.command}',
+      message: tooltip,
       child: GestureDetector(
         onSecondaryTap: onSecondaryTap,
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(4),
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: size / 3, vertical: size / 6),
-            decoration: BoxDecoration(
-              color: theme.titleBarBackground,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              action.emoji,
-              style: TextStyle(fontSize: size),
-            ),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: size / 3, vertical: size / 6),
+                decoration: BoxDecoration(
+                  color: theme.titleBarBackground,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  action.emoji,
+                  style: TextStyle(fontSize: size),
+                ),
+              ),
+              if (action.isScheduled)
+                Positioned(
+                  top: -2,
+                  right: -2,
+                  child: Container(
+                    width: 6,
+                    height: 6,
+                    decoration: const BoxDecoration(
+                      color: AppColors.info,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
       ),

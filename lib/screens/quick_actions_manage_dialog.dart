@@ -298,6 +298,28 @@ class _ActionRow extends StatelessWidget {
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
+                if (action.isScheduled)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: AppColors.info.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                            color: AppColors.info.withValues(alpha: 0.3)),
+                      ),
+                      child: Text(
+                        '${action.scheduleType!.name} - ${action.scheduleValue}',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: AppColors.info,
+                          fontFamily: 'Consolas',
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
