@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:xterm/xterm.dart' as xterm;
@@ -62,6 +63,44 @@ class _TerminalViewState extends State<TerminalView> {
     if (workDir != null && workDir.isNotEmpty) {
       Process.run('explorer.exe', [workDir]);
     }
+  }
+
+  /// Pick a folder, dump the current log to a .txt, then snackbar with an
+  /// "Open in Explorer" action that highlights the new file.
+  Future<void> _dumpToFile() async {
+    final folder = await FilePicker.platform.getDirectoryPath(
+      dialogTitle: 'Dump CLI log to folder',
+    );
+    if (folder == null || !mounted) return;
+
+    final filePath = await core.logs.dumpLiveTask(widget.task, folder);
+    if (!mounted) return;
+
+    if (filePath == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to dump log'),
+          duration: Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Dumped to $filePath'),
+        duration: const Duration(seconds: 5),
+        behavior: SnackBarBehavior.floating,
+        action: SnackBarAction(
+          label: 'Open in Explorer',
+          onPressed: () {
+            // /select, highlights the file in Explorer
+            Process.run('explorer.exe', ['/select,', filePath]);
+          },
+        ),
+      ),
+    );
   }
 
   /// Execute a quick action command
@@ -272,6 +311,15 @@ class _TerminalViewState extends State<TerminalView> {
             ),
             SizedBox(width: sizes.terminalHeaderHeight / 3.5),
           ],
+          // Dump button
+          _HeaderIconButton(
+            icon: Icons.save_alt,
+            tooltip: 'Dump CLI to .txt',
+            color: theme.foreground.withValues(alpha: 0.5),
+            onTap: _dumpToFile,
+            iconSize: sizes.terminalActionIconSize,
+          ),
+          SizedBox(width: sizes.terminalDragIconSize / 3),
           // Explorer button
           _HeaderIconButton(
             icon: Icons.folder_open,

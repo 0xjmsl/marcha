@@ -114,6 +114,37 @@ class LogsExtension {
     }
   }
 
+  /// Dump a live (or any) task's current log buffer to a .txt file in the given folder.
+  /// Returns the full file path written, or null on failure.
+  Future<String?> dumpLiveTask(Task task, String folderPath) async {
+    try {
+      final log = TerminalLog(
+        id: task.id,
+        name: task.name,
+        command: task.command,
+        arguments: task.arguments,
+        workingDirectory: task.workingDirectory,
+        startedAt: task.createdAt,
+        endedAt: task.isRunning ? null : DateTime.now(),
+        exitCode: task.exitCode,
+        lines: task.logBuffer,
+      );
+
+      final ts = DateTime.now();
+      final dateStr = '${ts.year}-${ts.month.toString().padLeft(2, '0')}-${ts.day.toString().padLeft(2, '0')}';
+      final timeStr = '${ts.hour.toString().padLeft(2, '0')}${ts.minute.toString().padLeft(2, '0')}${ts.second.toString().padLeft(2, '0')}';
+      final safeName = task.name.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');
+      final filePath = '$folderPath\\${safeName}_$dateStr-$timeStr.txt';
+
+      final file = File(filePath);
+      await file.writeAsString(log.plainText);
+      return filePath;
+    } catch (e) {
+      debugPrint('LogsExtension: Error dumping live task: $e');
+      return null;
+    }
+  }
+
   /// Clear all logs
   Future<void> clearAll() async {
     try {
