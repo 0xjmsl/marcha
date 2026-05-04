@@ -8,11 +8,12 @@ All work is logged in the vault's central changelog: `D:\Obsidian\jmsl\changelog
 - Format: `- \`HH:MM\` \`[marcha]\` **TYPE** — Description`
 - Types: `BUG FIX` | `FEATURE` | `FRICTION` | `DOC UPDATE` | `DECISION` | `GOTCHA` | `REFACTOR` | `DEPLOY`
 - Log as you go. End sessions with a CHECKPOINT line.
-- **First action in every conversation**: Read `D:\Obsidian\jmsl\active_threads.md`, register what you're working on. Update if the subject shifts. See vault CLAUDE.md § Conversation Tracking.
+- **First action in every conversation**: Read `D:\Obsidian\jmsl\threads.md`, register what you're working on. See `D:\Obsidian\jmsl\wiki\workflow.md` for the full model.
+- **No scratch files in this repo.** Any new artifact (HTML mockup, draft script, screenshot, scratch doc, throwaway log) lives in `D:\Obsidian\jmsl\threads\<slug>\files\`, never at this repo root or any subfolder. If no thread exists, open one first. See `wiki\workflow.md` § Threads rule #2.
 
 After completing work, update relevant docs:
 - This CLAUDE.md — if you discovered something hard to find
-- Design ideas → `D:\Obsidian\jmsl\todos.md` (see vault CLAUDE.md for workflow)
+- Design ideas → open a thread (`D:\Obsidian\jmsl\threads\<slug>\thread.md`) per `wiki\workflow.md` § Idea Capture. The legacy `todos.md` flow is retired.
 
 ## Project Overview
 Marcha is a Windows 11 startup management tool built with Flutter and native C++. It manages VS Code windows across virtual desktops and executes startup commands.
