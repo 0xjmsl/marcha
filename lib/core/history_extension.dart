@@ -17,9 +17,18 @@ class HistoryExtension {
 
   List<HistoryEntry> _entries = [];
 
-  /// Get all history entries (excluding archived)
-  List<HistoryEntry> get all =>
-      _entries.where((e) => !e.isArchived).toList();
+  /// Get all history entries (excluding archived).
+  /// Running entries are pinned at the top so long-lived tasks don't get
+  /// pushed down the list by newer short-lived ones.
+  List<HistoryEntry> get all {
+    final visible = _entries.where((e) => !e.isArchived);
+    final running = <HistoryEntry>[];
+    final rest = <HistoryEntry>[];
+    for (final e in visible) {
+      (e.isRunning ? running : rest).add(e);
+    }
+    return [...running, ...rest];
+  }
 
   /// Get all entries including archived
   List<HistoryEntry> get allWithArchived => List.unmodifiable(_entries);
