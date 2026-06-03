@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import '../core/core.dart';
 import '../core/settings_extension.dart';
+import '../core/templates_extension.dart';
 import '../models/app_settings.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
@@ -272,6 +275,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ],
                     ),
 
+                    const SizedBox(height: 20),
+
+                    // Templates section
+                    _buildTemplatesSection(colors),
+
                     const SizedBox(height: 32),
                   ],
                 ),
@@ -331,6 +339,130 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ],
     );
+  }
+
+  Widget _buildTemplatesSection(AppColorScheme colors) {
+    final malformed = core.templates.malformed;
+    return _buildSection(
+      colors: colors,
+      title: 'Templates',
+      icon: Icons.folder_special,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Import a template from a .json file. Each is added as a new copy — existing templates are never overwritten.',
+                style: TextStyle(fontSize: 12, color: colors.textSecondary),
+              ),
+            ),
+            const SizedBox(width: 12),
+            ElevatedButton.icon(
+              onPressed: _loadTemplateFile,
+              icon: const Icon(Icons.upload_file, size: 16),
+              style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+              label: const Text('Load Template'),
+            ),
+          ],
+        ),
+        if (malformed.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, size: 14, color: AppColors.warning),
+              const SizedBox(width: 6),
+              Text(
+                '${malformed.length} malformed — download to fix, then remove',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.warning),
+              ),
+            ],
+          ),
+          ...malformed.map((m) => Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: colors.background,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: colors.border),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(m.name, style: TextStyle(fontSize: 13, color: colors.textPrimary)),
+                            const SizedBox(height: 2),
+                            Text(m.error,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(fontSize: 11, color: colors.textMuted)),
+                          ],
+                        ),
+                      ),
+                      TextButton(onPressed: () => _downloadMalformed(m), child: const Text('Download')),
+                      TextButton(
+                        onPressed: () => _removeMalformed(m),
+                        child: const Text('Remove', style: TextStyle(color: AppColors.error)),
+                      ),
+                    ],
+                  ),
+                ),
+              )),
+        ],
+      ],
+    );
+  }
+
+  Future<void> _loadTemplateFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      dialogTitle: 'Load template JSON',
+      type: FileType.custom,
+      allowedExtensions: ['json'],
+    );
+    final path = result?.files.single.path;
+    if (path == null) return;
+    try {
+      final raw = await File(path).readAsString();
+      final count = await core.templates.importTemplates(raw);
+      if (!mounted) return;
+      setState(() {});
+      _toast('Imported $count template${count == 1 ? '' : 's'}.');
+    } catch (e) {
+      if (!mounted) return;
+      _toast('Could not load template: $e — fix the file and load again.', isError: true);
+    }
+  }
+
+  Future<void> _downloadMalformed(MalformedTemplate m) async {
+    final path = await FilePicker.platform.saveFile(
+      dialogTitle: 'Download malformed template',
+      fileName: '${m.refId}.json',
+    );
+    if (path == null) return;
+    try {
+      await File(path).writeAsString(m.downloadText);
+      if (!mounted) return;
+      _toast('Saved to $path');
+    } catch (e) {
+      if (!mounted) return;
+      _toast('Could not save: $e', isError: true);
+    }
+  }
+
+  Future<void> _removeMalformed(MalformedTemplate m) async {
+    await core.templates.removeMalformed(m.refId);
+    if (!mounted) return;
+    setState(() {});
+    _toast('Removed "${m.name}".');
+  }
+
+  void _toast(String msg, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+      backgroundColor: isError ? AppColors.error : null,
+    ));
   }
 
   Widget _buildInlineOption({required AppColorScheme colors, required String label, required Widget child}) {

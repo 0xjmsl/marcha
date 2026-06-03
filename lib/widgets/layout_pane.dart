@@ -228,6 +228,7 @@ class _TasksListPane extends StatelessWidget {
           iconColor: AppColors.info,
           info: '$totalCount',
           actions: [
+            _HeaderButton(icon: Icons.refresh, tooltip: 'Reload templates from disk', color: colors.textSecondary, onTap: () => core.templates.reload()),
             _HeaderButton(icon: Icons.create_new_folder, tooltip: 'Add Group', color: colors.textSecondary, onTap: () => TaskGroupEditScreen.show(context)),
             _HeaderButton(icon: Icons.add, tooltip: 'Add Task', color: AppColors.info, onTap: () => TemplateEditScreen.show(context)),
           ],

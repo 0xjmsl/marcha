@@ -84,6 +84,7 @@ class ApiExtension {
     ApiEndpoint('POST', '/api/tasks/:id/kill', 'kill_task'),
     ApiEndpoint('POST', '/api/tasks/:id/input', 'input_task'),
     ApiEndpoint('GET', '/api/templates', 'get_templates'),
+    ApiEndpoint('POST', '/api/templates/reload', 'reload_templates'),
     ApiEndpoint('POST', '/api/templates/:id/launch', 'launch_template'),
     ApiEndpoint('GET', '/api/layout', 'get_layout'),
     ApiEndpoint('POST', '/api/layout/assign', 'assign_layout'),
@@ -304,6 +305,8 @@ class ApiExtension {
         return _inputTask(params['id']!, data);
       case 'get_templates':
         return _getTemplates();
+      case 'reload_templates':
+        return await _reloadTemplates();
       case 'launch_template':
         return _launchTemplate(params['id']!);
       case 'get_layout':
@@ -395,6 +398,11 @@ class ApiExtension {
     return _HandlerResult.ok({
       'templates': _core.templates.all.map((t) => t.toJson()).toList(),
     });
+  }
+
+  Future<_HandlerResult> _reloadTemplates() async {
+    await _core.templates.reload();
+    return _HandlerResult.ok({'ok': true, 'count': _core.templates.all.length});
   }
 
   _HandlerResult _launchTemplate(String id) {

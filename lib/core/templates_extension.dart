@@ -42,6 +42,32 @@ class DisplayOrderItem {
   int get hashCode => type.hashCode ^ id.hashCode;
 }
 
+/// A templates.json entry (or the whole file) that failed to parse.
+/// Quarantined out of the active set but preserved so the user can download
+/// and fix it before it is cleaned away. Per-entry quarantines (`raw is Map`)
+/// are kept verbatim on disk across saves; a whole-file quarantine
+/// (`raw is String`) is session-only.
+class MalformedTemplate {
+  final String refId; // entry id if present, else 'malformed_<index>' / 'malformed_file'
+  final String name; // best-effort label for the UI
+  final dynamic raw; // original decoded JSON (Map) or raw file text (String)
+  final String error; // parse error detail
+
+  const MalformedTemplate({
+    required this.refId,
+    required this.name,
+    required this.raw,
+    required this.error,
+  });
+
+  bool get isWholeFile => raw is! Map;
+
+  /// Indented JSON (or the raw text) for download / inspection.
+  String get downloadText => raw is String
+      ? raw as String
+      : const JsonEncoder.withIndent('  ').convert(raw);
+}
+
 /// Extension managing saved task templates and groups
 class TemplatesExtension {
   final Core _core;
@@ -59,11 +85,15 @@ class TemplatesExtension {
   List<Template> _templates = [];
   List<TaskGroup> _groups = [];
   List<DisplayOrderItem> _displayOrder = [];
+  List<MalformedTemplate> _malformed = [];
 
   // === TEMPLATES ===
 
   /// Get all templates
   List<Template> get all => List.unmodifiable(_templates);
+
+  /// Templates that failed to parse on the last load (downloadable, then cleanable)
+  List<MalformedTemplate> get malformed => List.unmodifiable(_malformed);
 
   /// Get template by id
   Template? getById(String id) {
@@ -327,6 +357,48 @@ class TemplatesExtension {
     _rebuildDisplayOrderIfNeeded();
   }
 
+  /// Re-read templates/groups/order from disk and refresh the UI.
+  /// Use after an external edit to templates.json so changes take effect
+  /// without restarting Marcha. Mutations made in-app are already persisted
+  /// on each change, so reloading only ever pulls in out-of-band edits.
+  /// Tolerant: a bad entry is quarantined (see [malformed]) without blocking
+  /// the rest, and an unparseable file keeps the current in-memory set.
+  Future<void> reload() async {
+    await load();
+    _core.notify();
+  }
+
+  /// Import one or more templates from raw JSON (a single object or an array).
+  /// Each is added as a NEW copy with a fresh id — existing templates are never
+  /// overwritten. Throws on malformed JSON / non-object entries so the caller
+  /// can offer to download the bad input and let the user fix it.
+  Future<int> importTemplates(String rawJson) async {
+    final decoded = json.decode(rawJson); // throws on invalid JSON
+    final entries = decoded is List ? decoded : [decoded];
+    final added = <Template>[];
+    for (var i = 0; i < entries.length; i++) {
+      final entry = entries[i];
+      if (entry is! Map<String, dynamic>) {
+        throw FormatException('Entry #$i is not a JSON object');
+      }
+      final newId = '${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}_$i';
+      added.add(Template.fromJson(entry).copyWith(id: newId));
+    }
+    _templates.addAll(added);
+    _core.notify();
+    await _saveTemplates();
+    return added.length;
+  }
+
+  /// Clean a quarantined malformed entry. Persists the cleaned file (which
+  /// no longer re-includes the dropped entry). Download it first if you want
+  /// to keep a copy to fix.
+  Future<void> removeMalformed(String refId) async {
+    _malformed.removeWhere((m) => m.refId == refId);
+    _core.notify();
+    await _saveTemplates();
+  }
+
   /// Save all to disk
   Future<void> save() async {
     await Future.wait([_saveTemplates(), _saveGroups(), _saveDisplayOrder()]);
@@ -335,15 +407,68 @@ class TemplatesExtension {
   Future<void> _loadTemplates() async {
     try {
       final file = File(_templatesFilePath);
-      if (await file.exists()) {
-        final jsonString = await file.readAsString();
-        final List<dynamic> jsonList = json.decode(jsonString);
-        _templates = jsonList.map((j) => Template.fromJson(j)).toList();
-        debugPrint('TemplatesExtension: Loaded ${_templates.length} templates');
+      if (!await file.exists()) return;
+      final jsonString = await file.readAsString();
+
+      dynamic decoded;
+      try {
+        decoded = json.decode(jsonString);
+      } catch (e) {
+        // Whole file is not valid JSON. Do NOT blank the current set — keep
+        // what's in memory and quarantine the raw file so it can be downloaded
+        // and fixed (session-only; not re-written to disk).
+        debugPrint('TemplatesExtension: templates.json is not valid JSON: $e — keeping current set');
+        _malformed = [
+          MalformedTemplate(
+            refId: 'malformed_file',
+            name: '(entire templates.json)',
+            raw: jsonString,
+            error: 'File is not valid JSON: $e',
+          )
+        ];
+        return;
       }
+
+      if (decoded is! List) {
+        debugPrint('TemplatesExtension: templates.json root is not an array — keeping current set');
+        _malformed = [
+          MalformedTemplate(
+            refId: 'malformed_file',
+            name: '(entire templates.json)',
+            raw: jsonString,
+            error: 'Root is not a JSON array',
+          )
+        ];
+        return;
+      }
+
+      // Tolerant per-entry parse: one bad template never blocks the rest.
+      final good = <Template>[];
+      final bad = <MalformedTemplate>[];
+      for (var i = 0; i < decoded.length; i++) {
+        final entry = decoded[i];
+        try {
+          if (entry is! Map<String, dynamic>) {
+            throw const FormatException('entry is not a JSON object');
+          }
+          good.add(Template.fromJson(entry));
+        } catch (e) {
+          final hasId = entry is Map && entry['id'] is String && (entry['id'] as String).isNotEmpty;
+          final hasName = entry is Map && entry['name'] is String;
+          bad.add(MalformedTemplate(
+            refId: hasId ? entry['id'] as String : 'malformed_$i',
+            name: hasName ? entry['name'] as String : 'malformed entry #$i',
+            raw: entry,
+            error: e.toString(),
+          ));
+        }
+      }
+      _templates = good;
+      _malformed = bad;
+      debugPrint('TemplatesExtension: Loaded ${good.length} templates, ${bad.length} malformed');
     } catch (e) {
-      debugPrint('TemplatesExtension: Error loading templates: $e');
-      _templates = [];
+      debugPrint('TemplatesExtension: Error loading templates: $e — keeping current set');
+      // Do not clear _templates: a bad load keeps the last-good in-memory set.
     }
   }
 
@@ -365,7 +490,14 @@ class TemplatesExtension {
   Future<void> _saveTemplates() async {
     try {
       final file = File(_templatesFilePath);
-      final jsonString = json.encode(_templates.map((t) => t.toJson()).toList());
+      // Preserve per-entry malformed templates verbatim so they survive on disk
+      // until the user downloads + explicitly cleans them (download-then-clean).
+      // Whole-file quarantines (raw is String) are session-only and not re-emitted.
+      final entries = <dynamic>[
+        ..._templates.map((t) => t.toJson()),
+        ..._malformed.where((m) => m.raw is Map).map((m) => m.raw),
+      ];
+      final jsonString = json.encode(entries);
       await file.writeAsString(jsonString);
     } catch (e) {
       debugPrint('TemplatesExtension: Error saving templates: $e');
