@@ -6,10 +6,11 @@ import 'widgets/app_sidebar.dart';
 import 'widgets/exit_confirmation_dialog.dart';
 import 'screens/process_manager_screen.dart';
 import 'screens/resources_screen.dart';
+import 'screens/scheduler_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/api_screen.dart';
 
-enum AppView { processManager, resources, api, settings }
+enum AppView { processManager, scheduler, resources, api, settings }
 
 class MarchaApp extends StatefulWidget {
   const MarchaApp({super.key});
@@ -24,6 +25,7 @@ class _MarchaAppState extends State<MarchaApp> with WindowListener {
 
   static const _sidebarItems = [
     SidebarItem(id: 'process', title: 'Process Manager', icon: Icons.terminal),
+    SidebarItem(id: 'scheduler', title: 'Scheduled', icon: Icons.schedule),
     SidebarItem(id: 'resources', title: 'Resources', icon: Icons.monitor_heart),
     SidebarItem(id: 'api', title: 'API', icon: Icons.api),
     SidebarItem(id: 'settings', title: 'Settings', icon: Icons.settings),
@@ -58,6 +60,8 @@ class _MarchaAppState extends State<MarchaApp> with WindowListener {
     if (shouldExit) {
       // Stop API server before exiting
       await core.api.stop();
+      // Stop the scheduler clock and any job mid-run
+      core.scheduler.stop();
       // Kill all running tasks before exiting
       for (final task in core.tasks.running) {
         task.kill();
@@ -79,6 +83,9 @@ class _MarchaAppState extends State<MarchaApp> with WindowListener {
         case 'process':
           _currentView = AppView.processManager;
           break;
+        case 'scheduler':
+          _currentView = AppView.scheduler;
+          break;
         case 'resources':
           _currentView = AppView.resources;
           break;
@@ -96,6 +103,8 @@ class _MarchaAppState extends State<MarchaApp> with WindowListener {
     switch (_currentView) {
       case AppView.processManager:
         return 'process';
+      case AppView.scheduler:
+        return 'scheduler';
       case AppView.resources:
         return 'resources';
       case AppView.api:
@@ -137,6 +146,8 @@ class _MarchaAppState extends State<MarchaApp> with WindowListener {
     switch (_currentView) {
       case AppView.processManager:
         return const ProcessManagerScreen();
+      case AppView.scheduler:
+        return const SchedulerScreen();
       case AppView.resources:
         return const ResourcesScreen();
       case AppView.api:

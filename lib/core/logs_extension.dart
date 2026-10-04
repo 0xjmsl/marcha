@@ -30,27 +30,30 @@ class LogsExtension {
 
   /// Save a log from a completed task
   Future<void> save(String historyId, Task task) async {
-    try {
-      final log = TerminalLog(
-        id: historyId,
-        name: task.name,
-        command: task.command,
-        arguments: task.arguments,
-        workingDirectory: task.workingDirectory,
-        startedAt: task.createdAt,
-        endedAt: DateTime.now(),
-        exitCode: task.exitCode,
-        lines: task.logBuffer,
-      );
+    await saveLog(TerminalLog(
+      id: historyId,
+      name: task.name,
+      command: task.command,
+      arguments: task.arguments,
+      workingDirectory: task.workingDirectory,
+      startedAt: task.createdAt,
+      endedAt: DateTime.now(),
+      exitCode: task.exitCode,
+      lines: task.logBuffer,
+    ));
+  }
 
+  /// Save a log record (a task's, or a scheduled job run's) under its id
+  Future<void> saveLog(TerminalLog log) async {
+    try {
       // Save to file
-      final file = File('$_logsDirPath\\$historyId.json');
+      final file = File('$_logsDirPath\\${log.id}.json');
       await file.writeAsString(json.encode(log.toJson()));
 
       // Update cache
-      _cache[historyId] = log;
+      _cache[log.id] = log;
 
-      debugPrint('LogsExtension: Saved log for $historyId (${log.lines.length} lines)');
+      debugPrint('LogsExtension: Saved log for ${log.id} (${log.lines.length} lines)');
     } catch (e) {
       debugPrint('LogsExtension: Error saving log: $e');
     }

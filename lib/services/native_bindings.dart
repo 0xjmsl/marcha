@@ -1,5 +1,6 @@
 import 'dart:ffi';
 import 'dart:io';
+import 'package:ffi/ffi.dart';
 
 // FFI type definitions
 typedef CreateJobForProcessNative = IntPtr Function(Uint32 processId);
@@ -11,6 +12,12 @@ typedef TerminateJobDart = bool Function(int jobHandle);
 typedef KillProcessTreeNative = Bool Function(Uint32 processId);
 typedef KillProcessTreeDart = bool Function(int processId);
 
+typedef AddToStartupNative = Int32 Function(Pointer<Utf8> appName, Pointer<Utf8> appPath);
+typedef AddToStartupDart = int Function(Pointer<Utf8> appName, Pointer<Utf8> appPath);
+
+typedef StartupNameNative = Int32 Function(Pointer<Utf8> appName);
+typedef StartupNameDart = int Function(Pointer<Utf8> appName);
+
 class NativeBindings {
   static NativeBindings? _instance;
   static NativeBindings get instance => _instance ??= NativeBindings._();
@@ -19,6 +26,9 @@ class NativeBindings {
   late final CreateJobForProcessDart _createJobForProcess;
   late final TerminateJobDart _terminateJob;
   late final KillProcessTreeDart _killProcessTree;
+  late final AddToStartupDart _addToStartup;
+  late final StartupNameDart _removeFromStartup;
+  late final StartupNameDart _isInStartup;
 
   bool _loaded = false;
 
@@ -53,6 +63,13 @@ class NativeBindings {
           _lib.lookupFunction<KillProcessTreeNative, KillProcessTreeDart>(
               'kill_process_tree');
 
+      _addToStartup = _lib.lookupFunction<AddToStartupNative, AddToStartupDart>(
+          'add_to_startup');
+      _removeFromStartup = _lib.lookupFunction<StartupNameNative, StartupNameDart>(
+          'remove_from_startup');
+      _isInStartup = _lib.lookupFunction<StartupNameNative, StartupNameDart>(
+          'is_in_startup');
+
       _loaded = true;
     } catch (e) {
       // DLL not available - functions will return safe defaults
@@ -79,6 +96,35 @@ class NativeBindings {
   bool killProcessTree(int pid) {
     if (!_loaded || pid == 0) return false;
     return _killProcessTree(pid);
+  }
+
+  // === WINDOWS STARTUP (HKCU\...\CurrentVersion\Run) ===
+
+  static const _startupName = 'Marcha';
+
+  /// Whether marcha is registered to start with Windows.
+  bool isInStartup() {
+    if (!_loaded) return false;
+    final name = _startupName.toNativeUtf8();
+    try {
+      return _isInStartup(name) == 1;
+    } finally {
+      calloc.free(name);
+    }
+  }
+
+  /// Register (or unregister) the running executable to start with Windows.
+  bool setStartup(bool enabled) {
+    if (!_loaded) return false;
+    final name = _startupName.toNativeUtf8();
+    // Quoted — the Run value is a command line and the path may hold spaces.
+    final path = '"${Platform.resolvedExecutable}"'.toNativeUtf8();
+    try {
+      return (enabled ? _addToStartup(name, path) : _removeFromStartup(name)) == 1;
+    } finally {
+      calloc.free(name);
+      calloc.free(path);
+    }
   }
 
   /// Check if native bindings are available.

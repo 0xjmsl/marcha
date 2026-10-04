@@ -36,7 +36,7 @@ class Task {
   final DateTime createdAt;
   final String? templateId;
   final List<TaskStep> steps; // Automation steps
-  final List<QuickAction> quickActions; // Scheduled/manual quick actions
+  final List<QuickAction> quickActions; // Manual quick-action buttons
   final Map<String, String> envVars; // Per-task environment variables (merged with system at spawn)
 
   // Terminal state (lives with the task, survives navigation)
@@ -57,9 +57,6 @@ class Task {
   Timer? _stepTimeoutTimer;
   String _outputBuffer = ''; // Buffer for pattern matching
   VoidCallback? onStepProgress; // Called when step status changes
-
-  // Scheduled quick action timers (runtime only)
-  final List<Timer> _quickActionTimers = [];
 
   // Log buffer to capture terminal output for persistence
   final List<String> _logBuffer = [];
@@ -158,7 +155,7 @@ class Task {
       };
 
   /// Strip ANSI escape codes and control characters from text
-  static String _stripAnsi(String text) {
+  static String stripAnsi(String text) {
     return text
         // All ANSI escape sequences: \x1b followed by [ and any params, ending with a letter
         .replaceAll(RegExp(r'\x1b\[[0-9;?]*[a-zA-Z]'), '')
@@ -225,12 +222,12 @@ class Task {
 
         // Only capture to log after command is sent (skip shell init)
         if (_logCaptureStarted) {
-          _appendToLog(_stripAnsi(decoded));
+          _appendToLog(stripAnsi(decoded));
         }
 
         // Feed output to step executor for pattern matching
         if (hasSteps && !stepsCompleted) {
-          _processOutputForSteps(_stripAnsi(decoded));
+          _processOutputForSteps(stripAnsi(decoded));
         }
       },
       onDone: _cleanup,
@@ -267,15 +264,6 @@ class Task {
         // Start step execution if we have steps
         if (hasSteps) {
           _startStepExecution();
-        }
-
-        // Start scheduled quick actions
-        final scheduled = quickActions.where((a) => a.isScheduled).toList();
-        if (scheduled.isNotEmpty) {
-          for (final action in scheduled) {
-            _startScheduleTimer(action);
-          }
-          terminal.write('\x1b[90m[Schedule] ${scheduled.length} scheduled action(s) active\x1b[0m\r\n');
         }
 
         // Note: Resource monitoring is handled by the centralized ResourceMonitorExtension
@@ -491,72 +479,8 @@ class Task {
     _cleanup();
   }
 
-  // === SCHEDULED QUICK ACTIONS ===
-
-  void _startScheduleTimer(QuickAction action) {
-    switch (action.scheduleType!) {
-      case ScheduleType.interval:
-        final minutes = int.tryParse(action.scheduleValue ?? '') ?? 1;
-        final timer = Timer.periodic(Duration(minutes: minutes), (_) {
-          _fireScheduledAction(action);
-        });
-        _quickActionTimers.add(timer);
-      case ScheduleType.clock:
-        _scheduleAtClockTime(action);
-      case ScheduleType.oneShot:
-        final value = action.scheduleValue ?? '';
-        final delay = value.contains(':')
-            ? _delayUntilClockTime(value)
-            : Duration(minutes: int.tryParse(value) ?? 1);
-        final timer = Timer(delay, () {
-          _fireScheduledAction(action);
-        });
-        _quickActionTimers.add(timer);
-    }
-  }
-
-  void _fireScheduledAction(QuickAction action) {
-    if (!isRunning) return;
-    final now = DateTime.now();
-    final ts = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
-    terminal.write('\x1b[90m[$ts][Schedule] Firing: ${action.name}\x1b[0m\r\n');
-    write('${action.command}\r\n');
-  }
-
-  void _scheduleAtClockTime(QuickAction action) {
-    final delay = _delayUntilClockTime(action.scheduleValue ?? '00:00');
-    final timer = Timer(delay, () {
-      _fireScheduledAction(action);
-      // Reschedule for next day
-      if (isRunning) {
-        _scheduleAtClockTime(action);
-      }
-    });
-    _quickActionTimers.add(timer);
-  }
-
-  Duration _delayUntilClockTime(String timeStr) {
-    final parts = timeStr.split(':');
-    final hour = int.tryParse(parts[0]) ?? 0;
-    final minute = parts.length > 1 ? (int.tryParse(parts[1]) ?? 0) : 0;
-    final now = DateTime.now();
-    var target = DateTime(now.year, now.month, now.day, hour, minute);
-    if (target.isBefore(now) || target.isAtSameMomentAs(now)) {
-      target = target.add(const Duration(days: 1));
-    }
-    return target.difference(now);
-  }
-
-  void _cancelQuickActionTimers() {
-    for (final timer in _quickActionTimers) {
-      timer.cancel();
-    }
-    _quickActionTimers.clear();
-  }
-
   void _cleanup() {
     _stepTimeoutTimer?.cancel();
-    _cancelQuickActionTimers();
     _outputSubscription?.cancel();
     _outputSubscription = null;
     _pty = null;

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import '../models/scheduled_job.dart';
 import '../models/slot_assignment.dart';
 import 'eip191_verifier.dart';
 import 'core.dart';
@@ -93,6 +94,10 @@ class ApiExtension {
     ApiEndpoint('GET', '/api/resources/:taskId', 'get_resources'),
     ApiEndpoint('POST', '/api/restart', 'restart_tasks'),
     ApiEndpoint('GET', '/api/debug/log', 'get_debug_log'),
+    ApiEndpoint('GET', '/api/schedules', 'get_schedules'),
+    ApiEndpoint('POST', '/api/schedules', 'upsert_schedule'),
+    ApiEndpoint('POST', '/api/schedules/:id/run', 'run_schedule'),
+    ApiEndpoint('GET', '/api/schedules/:id/runs', 'get_schedule_runs'),
   ];
 
   /// Start the HTTP server
@@ -323,6 +328,14 @@ class ApiExtension {
         return _restartTasks(data);
       case 'get_debug_log':
         return _getDebugLog();
+      case 'get_schedules':
+        return _getSchedules();
+      case 'upsert_schedule':
+        return await _upsertSchedule(data);
+      case 'run_schedule':
+        return _runSchedule(params['id']!);
+      case 'get_schedule_runs':
+        return _getScheduleRuns(params['id']!);
       default:
         return _HandlerResult.notFound('Unknown action');
     }
@@ -410,6 +423,67 @@ class ApiExtension {
     if (template == null) return _HandlerResult.notFound('Template not found');
     final task = _core.tasks.launch(template);
     return _HandlerResult.ok({'ok': true, 'taskId': task.id});
+  }
+
+  // === SCHEDULES ===
+
+  _HandlerResult _getSchedules() {
+    final scheduler = _core.scheduler;
+    return _HandlerResult.ok({
+      'schedules': scheduler.all
+          .map((j) => {
+                ...j.toJson(),
+                'nextDue': j.nextDue.toIso8601String(),
+                'isRunning': scheduler.isRunning(j.id),
+              })
+          .toList(),
+    });
+  }
+
+  /// A job's runs, newest first. Each run's output: GET /api/logs/:runId.
+  _HandlerResult _getScheduleRuns(String id) {
+    if (_core.scheduler.getById(id) == null) {
+      return _HandlerResult.notFound('Schedule not found');
+    }
+    return _HandlerResult.ok({
+      'runs': _core.scheduler.runsFor(id).map((r) => r.toJson()).toList(),
+    });
+  }
+
+  /// Create or update a job. Body = ScheduledJob JSON; `id` optional on create.
+  Future<_HandlerResult> _upsertSchedule(Map<String, dynamic> data) async {
+    final type = data['scheduleType'] as String? ?? 'daily';
+    final value = data['scheduleValue'] as String?;
+    if ((data['name'] as String?)?.isEmpty ?? true) {
+      return _HandlerResult.badRequest('Missing "name"');
+    }
+    if ((data['command'] as String?)?.isEmpty ?? true) {
+      return _HandlerResult.badRequest('Missing "command"');
+    }
+    if (!JobScheduleType.values.any((t) => t.name == type)) {
+      return _HandlerResult.badRequest('Invalid scheduleType "$type". Valid: daily, interval');
+    }
+    final valid = type == 'daily'
+        ? value != null && ScheduledJob.parseClock(value) != null
+        : (int.tryParse(value ?? '') ?? 0) >= 1;
+    if (!valid) {
+      return _HandlerResult.badRequest(
+          'Invalid scheduleValue "$value" (daily: HH:MM, interval: minutes >= 1)');
+    }
+    final job = ScheduledJob.fromJson({
+      ...data,
+      'id': data['id'] as String? ?? ScheduledJob.generateId(),
+    });
+    final saved = await _core.scheduler.upsert(job);
+    return _HandlerResult.ok({'ok': true, 'schedule': saved.toJson()});
+  }
+
+  _HandlerResult _runSchedule(String id) {
+    if (_core.scheduler.getById(id) == null) {
+      return _HandlerResult.notFound('Schedule not found');
+    }
+    final started = _core.scheduler.runNow(id);
+    return _HandlerResult.ok({'ok': started, if (!started) 'reason': 'already running'});
   }
 
   _HandlerResult _getLayout() {

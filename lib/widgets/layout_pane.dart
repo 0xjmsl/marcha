@@ -1,4 +1,3 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../core/core.dart';
 import '../core/templates_extension.dart';
@@ -15,6 +14,7 @@ import '../screens/resources_screen.dart';
 import 'pane_drag_overlay.dart';
 import 'pane_target_selector.dart';
 import 'placeholder_input_dialog.dart';
+import 'log_viewer.dart';
 import 'terminal_view.dart';
 
 /// Generic pane that renders based on SlotContentType
@@ -862,188 +862,21 @@ class _TerminalPaneState extends State<_TerminalPane> {
 }
 
 /// Log view for completed tasks
-class _LogView extends StatefulWidget {
+class _LogView extends StatelessWidget {
   final int slotIndex;
   final HistoryEntry? entry;
 
   const _LogView({required this.slotIndex, this.entry});
 
   @override
-  State<_LogView> createState() => _LogViewState();
-}
-
-class _LogViewState extends State<_LogView> {
-  final ScrollController _scrollController = ScrollController();
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _exportLog() async {
-    if (widget.entry == null) return;
-
-    final log = await core.logs.get(widget.entry!.id);
-    if (log == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No log data available'), duration: Duration(seconds: 2)));
-      }
-      return;
-    }
-
-    // Generate default filename
-    final timestamp = DateTime.now();
-    final dateStr = '${timestamp.year}-${timestamp.month.toString().padLeft(2, '0')}-${timestamp.day.toString().padLeft(2, '0')}';
-    final timeStr = '${timestamp.hour.toString().padLeft(2, '0')}${timestamp.minute.toString().padLeft(2, '0')}';
-    final safeName = widget.entry!.name.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');
-    final defaultFileName = '${safeName}_$dateStr-$timeStr.log';
-
-    // Open save file dialog
-    final filePath = await FilePicker.platform.saveFile(dialogTitle: 'Export Log', fileName: defaultFileName, type: FileType.custom, allowedExtensions: ['log', 'txt']);
-
-    if (filePath == null) return; // User cancelled
-
-    final result = await core.logs.export(widget.entry!.id, filePath);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result != null ? 'Log exported to $result' : 'Failed to export log'), duration: const Duration(seconds: 3)));
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final theme = core.settings.terminalTheme;
-    final sizes = core.settings.uiSizes;
-
-    return Container(
-      color: theme.background,
-      child: Column(
-        children: [
-          // Header matching terminal style - wrapped in draggable
-          DraggablePaneHeader(
-            slotIndex: widget.slotIndex,
-            child: Container(
-              height: sizes.logHeaderHeight,
-              padding: EdgeInsets.symmetric(horizontal: sizes.logContentPadding),
-              decoration: BoxDecoration(
-                color: theme.background,
-                border: Border(bottom: BorderSide(color: theme.borderColor, width: 1)),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.drag_indicator, size: sizes.logHeaderDragIconSize, color: theme.foreground.withValues(alpha: 0.3)),
-                  SizedBox(width: sizes.logContentPadding / 2),
-                  Icon(Icons.description, size: sizes.logHeaderIconSize, color: theme.foreground.withValues(alpha: 0.5)),
-                  SizedBox(width: sizes.logContentPadding),
-                  Expanded(
-                    child: Text(
-                      widget.entry != null ? '${widget.entry!.name} (Log)' : 'Log',
-                      style: TextStyle(color: theme.foreground.withValues(alpha: 0.7), fontSize: sizes.logHeaderTitleFontSize, fontFamily: 'Consolas'),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  // Export button
-                Tooltip(
-                  message: 'Export log',
-                  child: InkWell(
-                    onTap: _exportLog,
-                    borderRadius: BorderRadius.circular(4),
-                    child: Padding(
-                      padding: EdgeInsets.all(sizes.logContentPadding / 2),
-                      child: Icon(Icons.download, size: sizes.logHeaderIconSize, color: theme.foreground.withValues(alpha: 0.5)),
-                    ),
-                  ),
-                ),
-                SizedBox(width: sizes.logContentPadding / 2),
-                // Close button
-                Tooltip(
-                  message: 'Close',
-                  child: InkWell(
-                    onTap: () => core.layout.clearSlot(widget.slotIndex),
-                    borderRadius: BorderRadius.circular(4),
-                    child: Padding(
-                      padding: EdgeInsets.all(sizes.logContentPadding / 2),
-                      child: Icon(Icons.close, size: sizes.logHeaderIconSize, color: theme.foreground.withValues(alpha: 0.5)),
-                    ),
-                  ),
-                ),
-              ],
-              ),
-            ),
-          ),
-          // Log content
-          Expanded(
-            child: widget.entry != null
-                ? FutureBuilder(
-                    future: core.logs.get(widget.entry!.id),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Center(child: CircularProgressIndicator(color: theme.foreground.withValues(alpha: 0.5)));
-                      }
-
-                      final log = snapshot.data;
-                      if (log == null) {
-                        return Center(
-                          child: Text(
-                            'No log data available',
-                            style: TextStyle(color: theme.foreground.withValues(alpha: 0.5), fontFamily: 'Consolas', fontSize: sizes.logContentFontSize),
-                          ),
-                        );
-                      }
-
-                      return Padding(
-                        padding: EdgeInsets.all(sizes.logContentPadding),
-                        child: SelectableText.rich(
-                          TextSpan(
-                            children: [
-                              // Header info
-                              TextSpan(
-                                text: '--- Log for ${log.name} ---\n',
-                                style: TextStyle(color: theme.foreground.withValues(alpha: 0.5), fontFamily: 'Consolas', fontSize: sizes.logContentFontSize),
-                              ),
-                              TextSpan(
-                                text: 'Command: ${log.command} ${log.arguments.join(' ')}\n',
-                                style: TextStyle(color: theme.foreground.withValues(alpha: 0.5), fontFamily: 'Consolas', fontSize: sizes.logContentFontSize),
-                              ),
-                              if (log.workingDirectory != null)
-                                TextSpan(
-                                  text: 'Directory: ${log.workingDirectory!.replaceAll('\\\\', '\\')}\n',
-                                  style: TextStyle(color: theme.foreground.withValues(alpha: 0.5), fontFamily: 'Consolas', fontSize: sizes.logContentFontSize),
-                                ),
-                              TextSpan(
-                                text: 'Duration: ${log.durationString}',
-                                style: TextStyle(color: theme.foreground.withValues(alpha: 0.5), fontFamily: 'Consolas', fontSize: sizes.logContentFontSize),
-                              ),
-                              if (log.exitCode != null)
-                                TextSpan(
-                                  text: ' | Exit code: ${log.exitCode}',
-                                  style: TextStyle(color: log.exitCode == 0 ? theme.successColor : theme.errorColor, fontFamily: 'Consolas', fontSize: sizes.logContentFontSize),
-                                ),
-                              TextSpan(
-                                text: '\n${'─' * 50}\n\n',
-                                style: TextStyle(color: theme.foreground.withValues(alpha: 0.3), fontFamily: 'Consolas', fontSize: sizes.logContentFontSize),
-                              ),
-                              // Log content
-                              TextSpan(
-                                text: log.lines.join('\n').replaceAll('\\\\', '\\'),
-                                style: TextStyle(color: theme.foreground, fontFamily: 'Consolas', fontSize: sizes.logContentFontSize),
-                              ),
-                            ],
-                          ),
-                          scrollPhysics: const ClampingScrollPhysics(),
-                        ),
-                      );
-                    },
-                  )
-                : Center(
-                    child: Text(
-                      'Log not found',
-                      style: TextStyle(color: theme.foreground.withValues(alpha: 0.5), fontFamily: 'Consolas', fontSize: sizes.logContentFontSize),
-                    ),
-                  ),
-          ),
-        ],
-      ),
+    final entry = this.entry;
+    return LogViewer(
+      title: entry != null ? '${entry.name} (Log)' : 'Log',
+      load: () async => entry != null ? core.logs.get(entry.id) : null,
+      exportName: entry?.name ?? 'log',
+      onClose: () => core.layout.clearSlot(slotIndex),
+      wrapHeader: (header) => DraggablePaneHeader(slotIndex: slotIndex, child: header),
     );
   }
 }

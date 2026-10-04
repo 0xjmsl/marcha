@@ -8,6 +8,7 @@ import 'settings_extension.dart';
 import 'logs_extension.dart';
 import 'resource_monitor_extension.dart';
 import 'api_extension.dart';
+import 'scheduler_extension.dart';
 
 /// Core monolith - single source of truth for all app state
 class Core extends ChangeNotifier {
@@ -23,6 +24,7 @@ class Core extends ChangeNotifier {
     _logs = LogsExtension(this);
     _resourceMonitor = ResourceMonitorExtension(this);
     _api = ApiExtension(this);
+    _scheduler = SchedulerExtension(this);
   }
 
   late final TemplatesExtension _templates;
@@ -33,6 +35,7 @@ class Core extends ChangeNotifier {
   late final LogsExtension _logs;
   late final ResourceMonitorExtension _resourceMonitor;
   late final ApiExtension _api;
+  late final SchedulerExtension _scheduler;
 
   TemplatesExtension get templates => _templates;
   TasksExtension get tasks => _tasks;
@@ -42,6 +45,7 @@ class Core extends ChangeNotifier {
   LogsExtension get logs => _logs;
   ResourceMonitorExtension get resourceMonitor => _resourceMonitor;
   ApiExtension get api => _api;
+  SchedulerExtension get scheduler => _scheduler;
 
   // Data directory
   static String _dataDir = '';
@@ -68,6 +72,9 @@ class Core extends ChangeNotifier {
     await _templates.load();
     await _history.load();
     await _logs.initialize();
+
+    // Start marcha's own clock (loads schedules.json, catches up missed runs)
+    await _scheduler.start();
 
     // Auto-start API server if enabled
     if (_settings.current.apiEnabled) {

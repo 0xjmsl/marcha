@@ -5,6 +5,7 @@ import '../core/core.dart';
 import '../core/settings_extension.dart';
 import '../core/templates_extension.dart';
 import '../models/app_settings.dart';
+import '../services/native_bindings.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../theme/terminal_theme.dart';
@@ -249,6 +250,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(height: 12),
                         _buildColorCustomization(styles, colors),
                         if (_editingTheme != null) ...[const SizedBox(height: 12), _buildSaveBar(styles, colors)],
+                      ],
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Startup section
+                    _buildSection(
+                      colors: colors,
+                      title: 'Startup',
+                      icon: Icons.power_settings_new,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Start Marcha with Windows',
+                                      style: TextStyle(fontSize: 13, color: colors.textPrimary)),
+                                  const SizedBox(height: 2),
+                                  Text('Keeps scheduled jobs running after a reboot',
+                                      style: TextStyle(fontSize: 11, color: colors.textMuted)),
+                                ],
+                              ),
+                            ),
+                            Switch(
+                              value: NativeBindings.instance.isInStartup(),
+                              activeColor: AppColors.accent,
+                              onChanged: NativeBindings.instance.isAvailable
+                                  ? (v) {
+                                      NativeBindings.instance.setStartup(v);
+                                      setState(() {});
+                                    }
+                                  : null,
+                            ),
+                          ],
+                        ),
                       ],
                     ),
 
