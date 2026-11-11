@@ -23,7 +23,6 @@ class MinimizedPanesDropdown extends StatefulWidget {
 
 class _MinimizedPanesDropdownState extends State<MinimizedPanesDropdown> {
   OverlayEntry? _overlayEntry;
-  final LayerLink _layerLink = LayerLink();
   bool _isOpen = false;
 
   void _toggleDropdown() {
@@ -37,9 +36,19 @@ class _MinimizedPanesDropdownState extends State<MinimizedPanesDropdown> {
   void _openDropdown() {
     final overlay = Overlay.of(context);
     final parentCtx = context; // Stable context from main widget tree
+    // The panel is placed with plain coordinates, measured once from the button.
+    // A CompositedTransformFollower here breaks every Tooltip inside the panel:
+    // a tooltip lays out in the overlay and needs its paint transform during
+    // layout, which a follower only has after layout (a full-screen error box).
+    // The button sits in the top bar, so its distance from the top and from the
+    // right edge holds when the window is resized.
+    final button = context.findRenderObject() as RenderBox;
+    final overlayBox = overlay.context.findRenderObject() as RenderBox;
+    final bottomRight = button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlayBox);
     _overlayEntry = OverlayEntry(
       builder: (overlayContext) => _DropdownOverlay(
-        link: _layerLink,
+        top: bottomRight.dy + 4,
+        right: overlayBox.size.width - bottomRight.dx,
         onClose: _closeDropdown,
         parentContext: parentCtx,
       ),
@@ -54,6 +63,16 @@ class _MinimizedPanesDropdownState extends State<MinimizedPanesDropdown> {
     if (mounted) {
       setState(() => _isOpen = false);
     }
+  }
+
+  /// Hot reload only: an open panel keeps the builder closure of the old code,
+  /// so close it and let the next click open one built by the new code.
+  @override
+  void reassemble() {
+    super.reassemble();
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+    _isOpen = false;
   }
 
   @override
@@ -80,28 +99,25 @@ class _MinimizedPanesDropdownState extends State<MinimizedPanesDropdown> {
           return const SizedBox.shrink();
         }
 
-        return CompositedTransformTarget(
-          link: _layerLink,
-          child: GestureDetector(
-            onTap: _toggleDropdown,
-            child: Container(
-              height: 28,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: BoxDecoration(
-                color: _isOpen ? colors.surfaceLighter : colors.surfaceLight,
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: _isOpen ? AppColors.info.withValues(alpha: 0.5) : colors.border),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (showTasks) const Icon(Icons.folder_special, size: 14, color: AppColors.info),
-                  if (showTasks && showHistory) const SizedBox(width: 4),
-                  if (showHistory) const Icon(Icons.history, size: 14, color: AppColors.info),
-                  const SizedBox(width: 4),
-                  Icon(_isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down, size: 16, color: colors.textMuted),
-                ],
-              ),
+        return GestureDetector(
+          onTap: _toggleDropdown,
+          child: Container(
+            height: 28,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            decoration: BoxDecoration(
+              color: _isOpen ? colors.surfaceLighter : colors.surfaceLight,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: _isOpen ? AppColors.info.withValues(alpha: 0.5) : colors.border),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (showTasks) const Icon(Icons.folder_special, size: 14, color: AppColors.info),
+                if (showTasks && showHistory) const SizedBox(width: 4),
+                if (showHistory) const Icon(Icons.history, size: 14, color: AppColors.info),
+                const SizedBox(width: 4),
+                Icon(_isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down, size: 16, color: colors.textMuted),
+              ],
             ),
           ),
         );
@@ -112,11 +128,12 @@ class _MinimizedPanesDropdownState extends State<MinimizedPanesDropdown> {
 
 /// Full-screen stack with backdrop + positioned dropdown panel
 class _DropdownOverlay extends StatelessWidget {
-  final LayerLink link;
+  final double top;
+  final double right;
   final VoidCallback onClose;
   final BuildContext parentContext;
 
-  const _DropdownOverlay({required this.link, required this.onClose, required this.parentContext});
+  const _DropdownOverlay({required this.top, required this.right, required this.onClose, required this.parentContext});
 
   @override
   Widget build(BuildContext context) {
@@ -130,11 +147,9 @@ class _DropdownOverlay extends StatelessWidget {
           behavior: HitTestBehavior.translucent,
           child: const SizedBox.expand(),
         ),
-        CompositedTransformFollower(
-          link: link,
-          targetAnchor: Alignment.bottomRight,
-          followerAnchor: Alignment.topRight,
-          offset: const Offset(0, 4),
+        Positioned(
+          top: top,
+          right: right,
           child: _DropdownPanel(maxHeight: maxHeight, onClose: onClose, parentContext: parentContext),
         ),
       ],
@@ -751,17 +766,10 @@ class _DropdownHistoryRowState extends State<_DropdownHistoryRow> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          widget.entry.name,
-                          style: AppTheme.bodySmall.copyWith(color: colors.textPrimary, fontSize: sizes.historyNameFontSize),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (_hasSteps()) ...[SizedBox(width: sizes.historyEmojiSize / 2), _SteppedBadge()],
-                    ],
+                  Text(
+                    widget.entry.name,
+                    style: AppTheme.bodySmall.copyWith(color: colors.textPrimary, fontSize: sizes.historyNameFontSize),
+                    overflow: TextOverflow.ellipsis,
                   ),
                   Flexible(
                     child: Row(
@@ -777,24 +785,35 @@ class _DropdownHistoryRowState extends State<_DropdownHistoryRow> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        if (_hasSteps()) ...[SizedBox(width: sizes.historyEmojiSize / 2), _SteppedBadge()],
                       ],
                     ),
                   ),
                 ],
               ),
             ),
-            if (widget.entry.isRunning) ...[
+            // Trailing area: one chip, then two action slots that always keep
+            // their space, so nothing moves when the row is hovered.
+            SizedBox(width: sizes.historyActionIconSize / 2),
+            if (widget.entry.isRunning)
               _PaneIndicatorDropdown(
                 taskId: widget.entry.taskId,
                 onTap: _displayTask,
                 iconSize: sizes.historyActionIconSize,
-              ),
-              if (_isHovered)
-                _RowButton(icon: Icons.stop, color: AppColors.stopped, tooltip: 'Stop', onTap: _stopTask, iconSize: sizes.historyActionIconSize),
-            ] else if (_isHovered) ...[
-              _RowButton(icon: Icons.description, color: AppColors.info, tooltip: 'View Log', onTap: _viewLog, iconSize: sizes.historyActionIconSize),
-              _RowButton(icon: Icons.delete, color: AppColors.error, tooltip: 'Delete', onTap: () => core.history.remove(widget.entry.id), iconSize: sizes.historyActionIconSize),
-            ],
+              )
+            else
+              _StatusChip(status: widget.entry.status, iconSize: sizes.historyActionIconSize),
+            SizedBox(width: sizes.historyActionIconSize / 3),
+            _ActionSlot(
+              visible: _isHovered && !widget.entry.isRunning,
+              child: _RowButton(icon: Icons.description, color: AppColors.info, tooltip: 'View Log', onTap: _viewLog, iconSize: sizes.historyActionIconSize),
+            ),
+            _ActionSlot(
+              visible: _isHovered,
+              child: widget.entry.isRunning
+                  ? _RowButton(icon: Icons.stop, color: AppColors.stopped, tooltip: 'Stop', onTap: _stopTask, iconSize: sizes.historyActionIconSize)
+                  : _RowButton(icon: Icons.delete, color: AppColors.error, tooltip: 'Delete', onTap: () => core.history.remove(widget.entry.id), iconSize: sizes.historyActionIconSize),
+            ),
           ],
         ),
       ),
@@ -902,6 +921,63 @@ class _PaneIndicatorDropdown extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A row action that keeps its space when hidden (shown on hover)
+class _ActionSlot extends StatelessWidget {
+  final bool visible;
+  final Widget child;
+
+  const _ActionSlot({required this.visible, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Visibility(visible: visible, maintainSize: true, maintainAnimation: true, maintainState: true, child: child);
+  }
+}
+
+/// Chip for a task that is not running, in the place and shape of the pane chip
+class _StatusChip extends StatelessWidget {
+  final HistoryStatus status;
+  final double iconSize;
+
+  const _StatusChip({required this.status, required this.iconSize});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColorsExtension.of(context);
+    final (IconData icon, String label, String tip, Color color) = switch (status) {
+      HistoryStatus.completed => (Icons.check, 'DONE', 'Finished', colors.textMuted),
+      HistoryStatus.error => (Icons.error_outline, 'ERR', 'Ended with an error', AppColors.error),
+      HistoryStatus.stopped => (Icons.stop, 'OFF', 'Stopped, not running', colors.textMuted),
+      HistoryStatus.archived => (Icons.stop, 'OFF', 'Not running (from an earlier session)', colors.textMuted),
+      HistoryStatus.running => (Icons.play_arrow, 'ON', 'Running', AppColors.running),
+    };
+    final isError = status == HistoryStatus.error;
+
+    return Tooltip(
+      message: tip,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: iconSize / 3, vertical: iconSize / 5),
+        decoration: BoxDecoration(
+          color: isError ? AppColors.error.withValues(alpha: 0.12) : Colors.transparent,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: isError ? AppColors.error.withValues(alpha: 0.4) : colors.border, width: 0.5),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: iconSize * 0.85, color: color),
+            SizedBox(width: iconSize / 4),
+            Text(
+              label,
+              style: TextStyle(fontSize: iconSize * 0.7, fontWeight: FontWeight.bold, color: color, fontFamily: 'Consolas'),
+            ),
+          ],
         ),
       ),
     );
