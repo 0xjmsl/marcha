@@ -65,7 +65,10 @@ class ApiExtension {
   Timer? _cleanupTimer;
 
   // Anti-replay: signature -> time used
-  final Map<String, DateTime> _usedSignatures = {};
+  /// Nonces already spent, keyed by signer and nonce, with the time. A signature is not
+  /// a good replay key by itself: the same message signed twice is the same
+  /// signature, and a signature has a second valid form.
+  final Map<String, DateTime> _usedNonces = {};
 
   // Request log ring buffer (max 100 entries)
   final List<ApiLogEntry> _requestLog = [];
@@ -113,7 +116,7 @@ class ApiExtension {
 
       // Cleanup timer for anti-replay map
       _cleanupTimer = Timer.periodic(const Duration(seconds: 60), (_) {
-        _cleanupUsedSignatures();
+        _cleanupUsedNonces();
       });
 
       _core.notify();
@@ -129,7 +132,7 @@ class ApiExtension {
     _cleanupTimer = null;
     await _server?.close();
     _server = null;
-    _usedSignatures.clear();
+    _usedNonces.clear();
     debugPrint('ApiExtension: Server stopped');
     _core.notify();
   }
@@ -141,6 +144,24 @@ class ApiExtension {
     return toggles[action] ?? true;
   }
 
+  /// Why a request from a browser is refused, or null when it may go on.
+  String? _browserRefusal(HttpRequest request) {
+    if (request.method == 'OPTIONS') return 'Browser requests are not accepted';
+    if (request.headers.value('origin') != null) {
+      return 'Browser requests are not accepted';
+    }
+    final site = request.headers.value('sec-fetch-site');
+    if (site != null && site != 'none') {
+      return 'Browser requests are not accepted';
+    }
+    final host = (request.headers.value('host') ?? '').toLowerCase();
+    final port = _server?.port;
+    if (host != '127.0.0.1:$port' && host != 'localhost:$port') {
+      return 'Unknown host';
+    }
+    return null;
+  }
+
   /// Handle incoming HTTP request
   Future<void> _handleRequest(HttpRequest request) async {
     final method = request.method;
@@ -148,15 +169,20 @@ class ApiExtension {
     String? clientAddress;
 
     try {
-      // CORS headers for local dev
-      request.response.headers.set('Access-Control-Allow-Origin', '*');
-      request.response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-      request.response.headers.set('Access-Control-Allow-Headers', 'Content-Type, X-Signed-Request');
       request.response.headers.set('Content-Type', 'application/json');
 
-      if (method == 'OPTIONS') {
-        request.response.statusCode = 200;
-        await request.response.close();
+      // This API is for programs on this PC, never for web pages. A page open
+      // in a browser on this PC can reach 127.0.0.1 too, so two things are
+      // refused before anything else is looked at:
+      //  - any request a browser marks as coming from a site (an Origin
+      //    header, or a preflight). No CORS header is ever sent, so a page
+      //    cannot read an answer either.
+      //  - any request whose Host is not this server's own loopback address
+      //    (a foreign name pointed at 127.0.0.1, "DNS rebinding").
+      final refusal = _browserRefusal(request);
+      if (refusal != null) {
+        await _respond(request, 403, {'error': refusal});
+        _log(method, path, null, 403, refusal);
         return;
       }
 
@@ -254,13 +280,6 @@ class ApiExtension {
         return null;
       }
 
-      // Anti-replay check
-      if (_usedSignatures.containsKey(signedReq.signature)) {
-        await _respond(request, 401, {'error': 'Signature already used'});
-        _log(request.method, request.uri.path, signedReq.client, 401, 'Replay detected');
-        return null;
-      }
-
       // Verify signature and recover address
       final recovered = Eip191Verifier.verifyAndRecover(signedReq);
       if (recovered == null) {
@@ -276,8 +295,32 @@ class ApiExtension {
         return null;
       }
 
-      // Record signature as used
-      _usedSignatures[signedReq.signature] = DateTime.now();
+      // The signature is real and from an allowed key. Now: is it for THIS
+      // call? The action and the path are part of what was signed.
+      if (signedReq.action != action) {
+        await _respond(request, 401, {'error': 'Signed for another action'});
+        _log(request.method, request.uri.path, recovered, 401, 'Action mismatch: ${signedReq.action}');
+        return null;
+      }
+      if (signedReq.path != request.uri.path) {
+        await _respond(request, 401, {'error': 'Signed for another path'});
+        _log(request.method, request.uri.path, recovered, 401, 'Path mismatch: ${signedReq.path}');
+        return null;
+      }
+
+      // And only once: each request carries its own nonce.
+      if (signedReq.nonce.length < 16) {
+        await _respond(request, 401, {'error': 'Nonce too short'});
+        _log(request.method, request.uri.path, recovered, 401, 'Nonce too short');
+        return null;
+      }
+      final nonceKey = '$recovered:${signedReq.nonce}';
+      if (_usedNonces.containsKey(nonceKey)) {
+        await _respond(request, 401, {'error': 'Nonce already used'});
+        _log(request.method, request.uri.path, recovered, 401, 'Replay detected');
+        return null;
+      }
+      _usedNonces[nonceKey] = DateTime.now();
 
       return _AuthResult(recovered, signedReq.data);
     } catch (e) {
@@ -661,10 +704,10 @@ class ApiExtension {
     _core.notify();
   }
 
-  void _cleanupUsedSignatures() {
+  void _cleanupUsedNonces() {
     final tolerance = _core.settings.current.apiTimestampTolerance;
     final cutoff = DateTime.now().subtract(Duration(seconds: tolerance * 2));
-    _usedSignatures.removeWhere((_, time) => time.isBefore(cutoff));
+    _usedNonces.removeWhere((_, time) => time.isBefore(cutoff));
   }
 }
 

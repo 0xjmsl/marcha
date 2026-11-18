@@ -2,10 +2,16 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:web3dart/crypto.dart';
 
-/// Signed request envelope matching the PublicOS feed server format
+/// Signed request envelope.
+///
+/// What is signed names exactly one call: the endpoint's [action], the URL
+/// [path] (which carries the task or job id), the payload, a [nonce] used
+/// once, and the time. A signature made for one call is good for no other.
 class SignedRequest {
   final int timestamp;
   final String action;
+  final String path;
+  final String nonce;
   final Map<String, dynamic> data;
   final String client;
   final String signature;
@@ -13,6 +19,8 @@ class SignedRequest {
   SignedRequest({
     required this.timestamp,
     required this.action,
+    required this.path,
+    required this.nonce,
     required this.data,
     required this.client,
     required this.signature,
@@ -22,6 +30,8 @@ class SignedRequest {
     return SignedRequest(
       timestamp: json['timestamp'] as int,
       action: json['action'] as String,
+      path: json['path'] as String,
+      nonce: json['nonce'] as String,
       data: Map<String, dynamic>.from(json['data'] ?? {}),
       client: json['client'] as String,
       signature: json['signature'] as String,
@@ -31,6 +41,8 @@ class SignedRequest {
   Map<String, dynamic> toJson() => {
         'timestamp': timestamp,
         'action': action,
+        'path': path,
+        'nonce': nonce,
         'data': data,
         'client': client,
         'signature': signature,
@@ -43,11 +55,14 @@ class Eip191Verifier {
   /// Returns the recovered address (lowercase, with 0x prefix) or null if invalid.
   static String? verifyAndRecover(SignedRequest request) {
     try {
-      // Build message in alphabetical key order to match Go's json.Marshal
+      // The signed message: these six keys, in alphabetical order, as
+      // compact JSON. Every one of them is checked by the caller.
       final requestData = {
         'action': request.action,
         'client': request.client,
         'data': request.data,
+        'nonce': request.nonce,
+        'path': request.path,
         'timestamp': request.timestamp,
       };
       final messageJson = jsonEncode(requestData);

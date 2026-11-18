@@ -1,0 +1,45 @@
+{
+ "address": "0x8ebc174d7f2cb423da7090f7fd0cc3df02acd6af",
+ "vectors": [
+  {
+   "timestamp": 1795000000,
+   "action": "get_tasks",
+   "path": "/api/tasks",
+   "nonce": "a3f1c09d5e7b42886c1d0e9f7a6b5c4d",
+   "data": {},
+   "client": "0x8ebc174d7f2cb423da7090f7fd0cc3df02acd6af",
+   "signature": "0xd4bd182d15db506d90ce46062e2ae798d4f4937bfac7e2f71d48250eef83c3de40b502fdeead709be4ea2ad05ddfac74317af820ceab538bc10b8ece344a90be1c"
+  },
+  {
+   "timestamp": 1795000001,
+   "action": "restart_tasks",
+   "path": "/api/restart",
+   "nonce": "0f1e2d3c4b5a69788796a5b4c3d2e1f0",
+   "data": {
+    "tasks": [
+     {
+      "taskId": "mwgw60s6",
+      "killDelayMs": 2000,
+      "startDelayMs": 5000
+     },
+     {
+      "taskId": "abc"
+     }
+    ]
+   },
+   "client": "0x8ebc174d7f2cb423da7090f7fd0cc3df02acd6af",
+   "signature": "0x621a97d6313e7b1b2386f58ab36b3d5b85436bfabd3259bbf365e89407286d413a7aec126a75300b34d31a7e6cbc73730d5a812224923f1ddde848b2ba3516e81c"
+  },
+  {
+   "timestamp": 1795000002,
+   "action": "input_task",
+   "path": "/api/tasks/x1/input",
+   "nonce": "11223344556677889900aabbccddeeff",
+   "data": {
+    "text": "echo \"hóla\" \\ / ñ ☃"
+   },
+   "client": "0x8ebc174d7f2cb423da7090f7fd0cc3df02acd6af",
+   "signature": "0x89d63fd0db3f2537c501d70331f48e8c13d3e800542e7ff0eba8440d640fcea945e299f13b89487b025554684b76f245b9cb93c42d24a10f25b7bc57fa77141a1b"
+  }
+ ]
+}
