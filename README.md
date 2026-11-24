@@ -2,14 +2,12 @@
 
 A Windows script and task management application built with Flutter. Marcha provides a flexible multi-pane interface for developers and power users to orchestrate, monitor, and manage multiple processes and terminal instances efficiently.
 
-![Marcha Screenshot](./print.png)
-
 ## Features
 
 ### Task Management
 - Create, edit, and organize tasks with customizable commands
 - Group tasks for batch execution
-- Task properties: name, executable, arguments, working directory, emoji icons, descriptions
+- Task properties: name, command, arguments, working directory, environment variables, emoji icons, descriptions
 - Placeholder support (`{{placeholderName}}`) for parameterized execution
 
 ### Automation Steps
@@ -60,7 +58,7 @@ Define automated interaction sequences for your tasks:
 
 ### Download
 
-A built copy for Windows is on the [releases page](https://github.com/0xjmsl/marcha/releases): unzip it and run `marcha\marcha.exe`. There is no installer. Windows SmartScreen asks once because the build is not code-signed.
+A built copy for Windows is on the [releases page](https://github.com/0xjmsl/marcha/releases): unzip it somewhere permanent (for example `C:\Tools`) and run `marcha.exe` from the `marcha` folder inside the zip. There is no installer. Windows SmartScreen asks once because the build is not code-signed.
 
 ### Prerequisites
 - Flutter SDK (3.0+)
@@ -86,15 +84,16 @@ flutter build windows --release
 ## Usage
 
 ### Creating Tasks
-1. Click **Add Task** in the sidebar
-2. Enter task name, executable (e.g., `python`, `npm`, `code`)
-3. Add arguments and working directory
-4. Choose an emoji icon
-5. Optionally add automation steps (expand the Steps section)
-6. Save and launch with the play button
+1. Click the **+** (Add Task) in the header of the **My Tasks** pane. The **New Template** screen opens
+2. Enter the task name and the **Command** (e.g., `python`, `npm`, `code`, or the full path of an `.exe`)
+3. Add **Arguments** and the **Working Directory** (a program that keeps files where it is started needs this set to its own folder)
+4. Optionally add **Environment Variables** (name and value, set for this task only)
+5. Choose an emoji icon
+6. Optionally add automation steps (the **Automation Steps** section)
+7. Save and launch with the play button
 
 ### Using Automation Steps
-1. Edit a task and expand the **Steps** section
+1. Edit a task and open the **Automation Steps** section
 2. Add steps with:
    - **Expect**: regex pattern to wait for in output
    - **Send**: command to send when pattern matches
